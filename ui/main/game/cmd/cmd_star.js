@@ -1,4 +1,4 @@
-    function CDMStar(x,y,z,owner) {
+    function CMDStar(x,y,z,owner) {
         var self = this;
         self.coordinates = [x,y,z];
         self.distance = ko.observable(0);

@@ -3,8 +3,8 @@
     "build": "00010",
     "context": "client",
     "date": "2016-12-20",
-    "description": "TODO",
-    "display_name": "TODO",
+    "description": "Multiplayer Galactic War",
+    "display_name": "CMD",
     "forum": "http://TODO.com:82",
     "identifier": "com.gmase.cmd",
     "version": "1",
@@ -17,7 +17,7 @@
     "fileSystem": false,
     "searchable": [
         "gmase",
-        "cdm",
+        "cmd",
         "metagame"
     ],
     "sort": "cmd",

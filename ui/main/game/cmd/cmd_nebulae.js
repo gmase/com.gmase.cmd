@@ -1,4 +1,4 @@
-function cdm_nebulae() {
+function cmd_nebulae() {
     return [
         {
             url: "img/backdrop_nebula.png",
