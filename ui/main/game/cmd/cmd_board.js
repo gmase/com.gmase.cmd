@@ -90,7 +90,94 @@ requireGW([
             return a.z - b.z;
         });
     }
-     
+
+	function SelectionViewModel(config) {
+        var self = this;
+
+		var galaxy = config.galaxy;
+        var stars = config.stars;
+        var hover = !!config.hover;
+        var color = config.color;
+
+            if (hover)
+                iconUrl = 'coui://ui/main/game/galactic_war/shared/img/hover.png';
+            else
+                iconUrl = 'coui://ui/main/game/galactic_war/shared/img/selection.png';
+
+            if (hover)
+                color = [0.5, 0.9, 1];
+
+            else
+                color = [0, 0.8, 1];
+
+        self.visible = ko.observable(true);
+        self.star = ko.observable(-1);
+        self.system = ko.computed(function() {
+			return self.star() >= 0 ? galaxy.systems()[self.star()] : undefined; });
+		
+
+        var extractor = function (field) {
+            return ko.pureComputed(function () {
+                var system = self.system();
+                if (system) {
+                    var ai = system.star.ai();
+                    return loc((ai && ai[field]) || system[field]() || '');
+                } else {
+                    return '';
+                }
+            });
+        };
+
+        self.name = extractor('name');
+        self.html = extractor('html');
+        self.description = extractor('description');
+		
+
+        self.scale = new createjs.Container();
+        self.scale.scaleY = 0.3;
+	    self.scale.scaleX = 0.4;
+        self.scale.z = -1;
+        self.icon = createBitmap({
+            url: iconUrl,
+            size: [240,240],
+            color: color
+        });
+        self.scale.addChild(self.icon);
+
+        ko.computed(function() {
+            var system = self.system();
+            var visible = !!system && self.visible();
+            if (hover && visible)
+                visible = system.mouseOver() !== system.mouseOut();
+            self.icon.visible = visible;
+            if (self.icon.visible) {
+                var container = system.systemDisplay;
+                container.addChild(self.scale);
+                sortContainer(container);
+            }
+            else {
+                if (self.scale.parent)
+                    self.scale.parent.removeChild(self.scale);
+            }
+        });
+
+        if (!hover) {
+            self.icon.addEventListener('tick', function() {
+                self.icon.rotation = (_.now() * 0.02) % 360;
+            });
+
+            self.system.subscribe(function(oldSystem) {
+                if (oldSystem)
+                    oldSystem.selected(false);
+            }, null, 'beforeChange');
+            self.system.subscribe(function() {
+                var newSystem = self.system();
+                if (newSystem)
+                    newSystem.selected(true);
+            });
+        }
+    }
+	
 	function GameViewModel(data) {
         var self = this;
 
@@ -126,9 +213,7 @@ requireGW([
         var defaultPlayerColor = [ [210,50,44], [51,151,197] ];
         var rawPlayerColor = defaultPlayerColor[0];
         var playerColor = _.map(rawPlayerColor, function(c) { return c / 255; });
-        //var playerStar = game.currentStar();
-		var playerStar = new CMDStar();
-        var stars=[playerStar]
+
 		
 		
         self.hidingUI = ko.computed(function() {
@@ -179,6 +264,27 @@ requireGW([
             return; /* window.location.href will not stop execution. */
         };
         self.money=ko.observable(-3);
+		
+		self.selection = new SelectionViewModel({
+            galaxy: self.galaxy,
+            hover: false
+        });
+		
+		self.hoverSystem = new SelectionViewModel({
+            galaxy: self.galaxy,
+            hover: true
+        });
+        _.forEach(self.galaxy.systems(), function(system,star) {
+            system.mouseOver.subscribe(function() {
+                self.hoverSystem.star(star);
+            });
+        });
+	    _.forEach(self.galaxy.systems(), function(system,star) {
+            system.click.subscribe(function() {
+                self.selection.star(star);
+            });
+        });
+		
     }
 
     function GalaxyViewModel(data) {
@@ -413,8 +519,6 @@ requireGW([
         }
 
         var updateStage = function () {
-            if (model.hidingUI())
-                return;
             var w = self.stage.canvas.width;
             var h = self.stage.canvas.height;
             if (w !== self.canvasWidth() ||
@@ -604,6 +708,7 @@ requireGW([
 
         self.click = ko.observable(0);
         self.systemDisplay.addEventListener("click", function() { self.click(self.click() + 1); });
+		//TODO
 
         self.mouseOver = ko.observable(0);
         self.mouseOut = ko.observable(0);
@@ -631,7 +736,7 @@ function mercsLeaderboards (data, ladder_name, title,playerId) {
 	//tables_parent.attr('class', 'system-detail')
 	
 	var head = $('<div></div>');
-	head.attr('id','div_credits_title')
+	head.attr('class','div_credits_title')
 	//head.attr('class', 'leaderboardTitle');
 	head.html(title);
 	tables_parent.append(head);
@@ -701,7 +806,7 @@ function factionsLeaderboards (data, ladder_name, title) {
 	tables_parent.attr('id', ladder_name);
 	
 	var head = $('<div></div>');
-	head.attr('class', 'leaderboardTitle');
+	head.attr('class', 'div_credits_title');
 	head.html(title);
 	tables_parent.append(head);
 	
@@ -822,7 +927,7 @@ $.ajax({
 			}, 'json');
 		$.get(url + "/cdm/players", function (players) {
 				lb2=new mercsLeaderboards(players,'mercenaries-board',"Mercenaries",playerId);
-				model.money=-20;
+				model.money(lb2.money);
 			}, 'json');
 	}
 });

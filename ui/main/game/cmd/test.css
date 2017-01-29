@@ -53,6 +53,16 @@ html, body {
     float: right;
 }
 
+#player_info {
+	float: right;
+	right:5%;
+	position: absolute;
+    font-family: 'Sansation Bold';
+    font-size: 18px;
+    color: #88FFAA;
+    text-shadow: 0px 0px 20px #88FFAA;
+}
+
 
 #leaderboardTitle {
     font-size: 18px;
@@ -78,6 +88,14 @@ html, body {
 	#mercenaries-board #current_player {
 		font-size: 15px;
 	}
+    #mercenaries-board .div_credits_title {
+        font-family: 'Sansation Bold';
+        font-size: 18px;
+        color: #88DBFF;
+        text-shadow: 0px 0px 20px #88DBFF;
+        margin-bottom: 4px;
+        line-height: 1.3;
+    }
 
 
 
