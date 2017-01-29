@@ -1,0 +1,153 @@
+#galaxy-map {
+    position: absolute;
+    top: 8%;
+    left: 0px;
+    height: 92%;
+    width: 100%;
+    overflow: hidden;
+    /*background: transparent url('coui://ui/main/game/galactic_war/gw_play/backdrop.png') center no-repeat;*/
+	background: transparent url('img/backdrop.png') center no-repeat;
+    /*background-image: url('file://C:/Program%20Files%20(x86)/Steam/SteamApps/common/Planetary%20Annihilation%20Titans/media/ui/main/game/galactic_war/gw_play/backdrop.png');
+    background-repeat: no-repeat;
+    background-position: center;
+    background-size: cover;*/
+}
+html, body {
+    height: 100%;
+    position: relative;
+    min-width: 1280px;
+    min-height: 720px;
+    z-index: -3;
+	background: none;
+}
+
+#selected-system-anchor {
+    position: fixed;
+}
+
+    #selected-system-anchor .below {
+        position: relative;
+        top: 5000%;
+        width: 100em;
+    }
+
+    #selected-system-anchor .btn_hero {
+        position: relative;
+        left: -50%;
+    }
+
+#header {
+    height: 8%;
+    width: 100%;
+    position: absolute;
+    top: 0px;
+	left:0px;
+	background: transparent url('img/cmd_logo.png') center no-repeat;
+}
+
+
+#system-column {
+    height: 100%;
+    background: rgba(0, 0, 0, 0.2);
+    text-align: left;
+    float: right;
+}
+
+
+#leaderboardTitle {
+    font-size: 18px;
+    color: #FFFFFF;
+}
+
+#mercenaries-board {
+    width: 280px;
+    text-align: left;
+    top: 20%;
+	left: 80%;
+    background: rgba(11, 26, 31, 0.9);
+    padding: 16px 0px 16px 16px;
+    box-shadow: 0px 0px 40px rgb(0, 0, 0);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    position: absolute;
+    float: right;
+    margin: 10px;
+    max-height: 90%;
+    overflow-y: auto;
+}
+
+	#mercenaries-board #current_player {
+		font-size: 15px;
+	}
+
+
+
+#faction-board {
+    width: 280px;
+    text-align: left;
+    top: 10%;
+	left: 80%;
+    background: rgba(11, 26, 31, 0.9);
+    padding: 16px 0px 16px 16px;
+    box-shadow: 0px 0px 40px rgb(5, 5, 5);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    position: absolute;
+    float: right;
+    margin: 10px;
+    max-height: 10%;
+    overflow-y: auto;
+}
+
+    #faction-board .div_credits_title {
+        font-family: 'Sansation Bold';
+        font-size: 18px;
+        color: #88DBFF;
+        text-shadow: 0px 0px 20px #88DBFF;
+        margin-bottom: 4px;
+        line-height: 1.3;
+    }
+
+    #faction-board .div_credits_name {
+        min-width: 300px;
+    }
+
+    #faction-board .system-name,
+    #faction-board .credits-category {
+        font-family: 'Sansation Bold';
+        font-size: 28px;
+        color: #88DBFF;
+        text-shadow: 0px 0px 20px #88DBFF;
+        margin: 0px 0px 4px 0px;
+    }
+
+    #faction-board .credits_list .system-display {
+    }
+
+.system-display .content {
+    display: inline-block;
+}
+
+.system-display .planets {
+    display: block;
+    margin-bottom: 0.5em;
+}
+
+.system-display .all-planets {
+    /*vertical-align: top;*/
+}
+
+    .system-display .all-planets img {
+        /*vertical-align: top;*/
+    }
+
+#system-detail .credits_list,
+.system-display .description {
+    max-height: 400px;
+    color: #88DBFF;
+    line-height: 1.7;
+    padding-right: 16px;
+    overflow: auto;
+}
+
+#system-detail .credits_list {
+    max-height: 600px;
+}
