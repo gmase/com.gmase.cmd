@@ -2,11 +2,15 @@ var model;
 var handlers;
 var p;
 var starsJs;
-//var money =-1;
 var factionColors=[];
 factionColors[0]=[1,0,0];
 factionColors[1]=[1,1,0];
 factionColors[2]=[1,0,1];
+factionColors[3]=[1,1,0];
+
+var phases=[];
+phases[0]="Plan";
+phases[1]="Battle";
 
 requireGW([
     'coui://ui/main/game/galactic_war/shared/js/vecmath.js'
@@ -285,6 +289,26 @@ requireGW([
             });
         });
 		
+		
+		//End turn countdown
+		self.turn=ko.observable(data.turn);
+		self.phase=ko.observable(phases[data.phase]);
+		
+		var endDate=new Date(data.phaseEnds);
+
+		var countdown = endDate - new Date().getTime();
+		var countdownArray = new Array();
+
+		var DAY = 24 * 60 * 60 * 1000;
+		var HOUR = 60 * 60 * 1000;
+		var MINUTE = 60 * 1000;
+		var SECOND = 1000;
+
+		countdownArray[0] = to_00_str(Math.floor(countdown / DAY));
+		countdownArray[1] = to_00_str(Math.floor((countdown - countdownArray[0] * DAY) / HOUR));
+		countdownArray[2] = to_00_str(Math.floor((countdown - countdownArray[1] * HOUR - countdownArray[0] * DAY) / MINUTE));
+		self.phaseCountDown=ko.observable(countdownArray[0]+"d "+countdownArray[1]+"h "+countdownArray[2]+"m");
+		//self.phaseCountDown=self.turnCountDown;
     }
 
     function GalaxyViewModel(data) {
@@ -646,7 +670,7 @@ requireGW([
 		//If no owner show star
 		var owner=self.star.owner
 		
-		if (owner==-1)
+		if (owner==-1 || !owner)
 		{
 			var icon = createBitmap({
 				url: "img/star.png",
@@ -715,14 +739,6 @@ requireGW([
         self.systemDisplay.addEventListener('rollover', function() { self.mouseOver(self.mouseOver() + 1); });
         self.systemDisplay.addEventListener('rollout', function() { self.mouseOut(self.mouseOver()); });
     }
-
-	
-function CMDGame(stars, money) {
-        var self = this;
-        self.stars = stars;
-		self.money= money;
-		
-    }
 	
 function mercsLeaderboards (data, ladder_name, title,playerId) {
 	var that = this;
@@ -745,7 +761,7 @@ function mercsLeaderboards (data, ladder_name, title,playerId) {
 	tables_parent.append(table);
 	this.players = []
 
-	for (x in this.data) {
+	for (var x=0 ; x< this.data.length; x++) {
 		var player = this.data[x];
 		var row = $("<tr></tr>");
 		var rank = $("<th></th>");
@@ -753,13 +769,6 @@ function mercsLeaderboards (data, ladder_name, title,playerId) {
 		var faction = $("<th></th>");
 		var wealth = $("<th></th>");
 		var score = $("<th></th>");
-		player.elems = {
-			row : row,
-			name : name,
-			faction : faction,
-			wealth : wealth,
-			score: score
-		};
 		if (player.uber_id==playerId)
 		{
 			row.attr('id','current_player');
@@ -785,7 +794,7 @@ function mercsLeaderboards (data, ladder_name, title,playerId) {
 		row.append(name);
 		row.append(faction);
 		row.append(wealth);
-		row.append(score);
+		//row.append(score);
 		//row.attr('pid',player.Id);
 		table.append(row);
 		this.players.push(player.name);
@@ -810,40 +819,53 @@ function factionsLeaderboards (data, ladder_name, title) {
 	head.html(title);
 	tables_parent.append(head);
 	
-	var table = $("<table></table>");
+	var table = $("<ul></ul>");
+	//table.attr('class','faction');
 	tables_parent.append(table);
 	this.factions = []
 
-	for (x in this.data) {
+	for (var x=0 ; x< this.data.length; x++) {
 		var faction = this.data[x];
-		var row = $("<tr></tr>");
-		var rank = $("<th></th>");
-		var name = $("<th></th>");
-		var wealth = $("<th></th>");
-		var leaders = $("<th></th>");
-		var score = $("<th></th>");
-		faction.elems = {
-			row : row,
-			name : name,
-			leaders : leaders,
-			wealth : wealth,
-			score: score
-		};		
-		name.attr('class', 'rank');
-		leaders.attr('class', 'user');
-		wealth.attr('class', 'rating');
-		score.attr('class', 'rating');
+
+		var row = $("<ul></ul>");
+		//row.attr('class', 'faction');
+		//row.attr('class', 'faction');
+		//row.attr('background-image', "url('img/icon_faction_2.png') no-repeat")
+		//row.attr('class', 'faction'+faction.faction_id.toString());
+		
+		var factionIcon = $("<img></img>");
+		var rank = $("<li></li>");
+		var name = $("<li></li>");
+		var wealth = $("<li></li>");
+		var leaders = $("<li></li>");
+		var score = $("<li></li>");
+		
+		factionIcon.attr('class', 'faction_icon');
+		factionIcon.attr('src',"img/icon_faction_"+faction.faction_id.toString()+".png");
+		factionIcon.attr('alt',"faction icon");
+		
+		rank.attr('class', 'faction_line');
+		name.attr('class', 'faction_line');
+		leaders.attr('class', 'faction_line');
+		wealth.attr('class', 'faction_line');
+		score.attr('class', 'faction_line');
+		
+		
 		rank.html((parseInt(x) + 1).toString());
 		name.html(faction.name)//(parseInt(x) + 1).toString());
-		
 		var strLeaders=''
-		for (lead in faction.leaders) {
-			strLeaders=strLeaders+lead+"; ";
+		
+		for (var i = 0; i < faction.leaders.length; i++) 
+		{
+			strLeaders=strLeaders+faction.leaders[i]+"; ";
 		}
+		
 		strLeaders=strLeaders.slice(0, -2);
 		leaders.html(strLeaders);
 		wealth.html(faction.wealth);
 		score.html(faction.score);
+		
+		row.append(factionIcon);
 		row.append(rank);
 		row.append(name);
 		row.append(leaders);
@@ -857,26 +879,37 @@ function factionsLeaderboards (data, ladder_name, title) {
 	this.ready = true;
 }
 
-  function loadStars (data) {
+
+
+
+  function StarsData (data) {
 	//this.data = data.stars;
-	this.stars = []
+	this.stars = [];
 		
 	for (x in data.stars) {
 		var star = data.stars[x];
-		
-		/*star.elems = {
-			//star_Id : star_Id,
-			x : x,
-			y : y,
-			z : z,
-			state: state,
-			owner: owner
-		};*/
-		nStar=new CMDStar(star.x,star.y,star.z,star.owner)
+		nStar=new CMDStar(star.x,star.y,star.z,star.owner);
 		this.stars.push(nStar);
 	};
-	this.stars;
 }
+
+function TurnData (data) {
+	this.turn = data.turn;
+	this.phase=data.phase;
+	this.turnEnds=data.turn_ends;
+	this.phaseEnds=data.phase_ends;
+}
+
+function CMDGame(stars, money, turn) {
+        this.stars = stars;
+		this.money= money;
+		this.turn = turn.turn;
+		this.phase=turn.phase;
+		this.turnEnds=turn.turnEnds;
+		this.phaseEnds=turn.phaseEnds;
+}
+	
+
 
     // Start loading the game & document
     var documentLoader = $(document).ready();
@@ -896,11 +929,15 @@ function factionsLeaderboards (data, ladder_name, title) {
 var playerName=decode(localStorage.uberName);
 var playerId=-1;
 
+var turn;
 
     // We can start when both are ready
     $.when(
-		$.get(url + "/cdm/stars", function (stars) {
-				starsJs=new loadStars(stars);
+		$.get(url + "/cdm/stars", function (starsInput) {
+				starsJs=new StarsData(starsInput);
+			}, 'json'),
+		$.get(url + "/cdm/currentTurn", function (turnInput) {
+				turn=new TurnData(turnInput);
 			}, 'json'),
         documentLoader
     ).then(function(
@@ -908,7 +945,7 @@ var playerId=-1;
     ) {
 
 
-	    var data= new CMDGame(starsJs.stars,money);
+	    var data= new CMDGame(starsJs.stars,money,turn);
         model = new GameViewModel(data);
 
 
@@ -918,6 +955,7 @@ $.ajax({
 	url : ('http://pastats.com/report/getplayerid?ubername=' + playerName),
 	dataType : 'text',
 	error : function () {
+		//TODO: This alert is a placeholder for a proper pop up
 		alert("You must install and play with PAstats first");
 	},
 	success : function (PID) {

@@ -10,6 +10,7 @@
 	<script src="coui://ui/main/game/galactic_war/shared/js/easeljs-0.7.1.min.js"></script>
     <script src="coui://ui/main/shared/js/commander_utility.js" type="text/javascript"></script>
     <script src="coui://ui/main/shared/js/playfab.js" type="text/javascript"></script>
+	<script src="util.js" type="text/javascript"></script>
 	<script src="cmd_star.js" type="text/javascript"></script>
 	<script src="cmd_nebulae.js" type="text/javascript"></script>
     <script src="cmd_board.js" type="text/javascript"></script>
@@ -30,9 +31,21 @@
             <span class="glyphicon glyphicon-chevron-left carat"></span>
         </div>
 	    <div id="player_info">
-			<span>Available Tau:</span>
-            <span id="money" data-bind="text: money"></span>
-        </div>
+			<div id="money">
+				<span>Available Tau:</span>
+				<span data-bind="text: money"></span>
+		    </div>
+			<div id="turn_info">
+				<span>Turn:</span>
+				<span data-bind="text: turn"></span>
+			</div>
+			<div id="phase_info">
+				<span>Phase:</span>
+				<span  data-bind="text: phase"></span>
+				<span data-bind="text: phaseCountDown"></span>
+				<span>left</span>
+			</div>
+		</div>
     </div>
 		
     <div id="footer" class="ignoremouse">
