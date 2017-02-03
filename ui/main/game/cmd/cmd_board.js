@@ -7,10 +7,13 @@ factionColors[0] = [1, 0, 0];
 factionColors[1] = [1, 1, 0];
 factionColors[2] = [1, 0, 1];
 factionColors[3] = [1, 1, 0];
+var regenerateCost = 10;
 
 var phases = [];
 phases[0] = "Plan";
 phases[1] = "Battle";
+
+var players = [];
 
 requireGW([
 		'coui://ui/main/game/galactic_war/shared/js/vecmath.js'
@@ -182,6 +185,121 @@ requireGW([
 	function GameViewModel(data) {
 		var self = this;
 
+		self.regenerateDialog = ko.observable(false);
+		self.alive = ko.observable(true);
+		self.regenerating = ko.observable(false);
+		self.sendMoneyDialog = ko.observable(false);
+		self.intendedAmmount = ko.observable(0);
+		self.transferTarget = ko.observable();
+		self.targetId=null;
+
+		self.transferTargetId=ko.observable();
+		//self.hasMoney=ko.observable(true);
+
+
+		self.money = ko.observable(-3);
+		self.turn = ko.observable(data.turn);
+		self.phase = ko.observable(phases[data.phase]);
+
+		//End turn countdown
+		var endDate = new Date(data.phaseEnds);
+
+		var countdown = endDate - new Date().getTime();
+		var countdownArray = new Array();
+
+		var DAY = 24 * 60 * 60 * 1000;
+		var HOUR = 60 * 60 * 1000;
+		var MINUTE = 60 * 1000;
+		var SECOND = 1000;
+
+		countdownArray[0] = to_00_str(Math.floor(countdown / DAY));
+		countdownArray[1] = to_00_str(Math.floor((countdown - countdownArray[0] * DAY) / HOUR));
+		countdownArray[2] = to_00_str(Math.floor((countdown - countdownArray[1] * HOUR - countdownArray[0] * DAY) / MINUTE));
+		self.phaseCountDown = ko.observable(countdownArray[0] + "d " + countdownArray[1] + "h " + countdownArray[2] + "m");
+		//self.phaseCountDown=self.turnCountDown;
+
+		self.showRegenerateDialog = function () {
+			self.regenerateDialog(true);
+			self.intendedAmmount(10);
+		}
+		self.hideRegenerateDialog = function () {
+			self.regenerateDialog(false);
+		}
+		self.tryRegenerate = function () {
+			//If player has regenerateCost he send order, else err messenge
+			if (self.money() >= regenerateCost) {
+				self.money(self.money() - regenerateCost);
+				self.regenerating(true);
+				self.hideRegenerateDialog();
+			}
+		}
+
+		self.hasMoney = ko.computed(function () {
+				return (self.intendedAmmount()>0 && self.money() >= self.intendedAmmount());
+			}, this);
+			
+		self.canSend= ko.computed(function () {
+				return (self.hasMoney() && self.transferTargetId()!=null);
+			}, this);
+		
+
+		//Money transfer dialog
+		self.showSendMoneyDialog = function () {
+			self.intendedAmmount(5);
+			self.sendMoneyDialog(true);
+
+			var playerNames = []
+			for (var i = 0; i < players.length; i++)
+				playerNames.push(players[i].name);
+
+			var autocomplete_options = {
+				data: playerNames,
+				list: {
+					sort: {
+						enabled: true
+					},
+					match: {
+						enabled: true
+					}
+				}
+			};
+			//Autocomplete
+			//self.complete = searchbox.easyAutocomplete(autocomplete_options);
+			/* SETTING UP AUTOCOMPLETE */
+
+			var searchbox = $("#searchbox");
+			var temp = searchbox.easyAutocomplete(autocomplete_options);
+			
+			//self.
+			
+			
+			searchbox.on('input change', function () {
+				var found=false;
+				if (self.transferTarget() != null) {
+					var text = self.transferTarget();
+					for (var x = 0; x < players.length; x++) {
+						var player = players[x];
+						if (player.name.toLowerCase() == text.toLowerCase()) {
+							self.transferTargetId (player.id);
+							found=true;
+							break;
+						}
+					}
+					if(!found)
+						self.transferTargetId (null);
+				}
+			})
+
+		}
+		self.hideSendMoneyDialog = function () {
+			self.sendMoneyDialog(false);
+		}
+		self.trySendMoney = function () {
+			self.sendMoneyDialog(false);
+			self.money(self.money() - self.intendedAmmount())
+			sendMoney(self.intendedAmmount(), playerId, playerId, self.transferTargetId(), playerKey, self.turn());
+		}
+
 		self.useLocalServer = ko.observable().extend({
 				session: 'use_local_server'
 			});
@@ -273,7 +391,6 @@ requireGW([
 			window.location.href = 'coui://ui/main/game/start/start.html';
 			return; /* window.location.href will not stop execution. */
 		};
-		self.money = ko.observable(-3);
 
 		self.selection = new SelectionViewModel({
 				galaxy: self.galaxy,
@@ -294,26 +411,6 @@ requireGW([
 				self.selection.star(star);
 			});
 		});
-
-		//End turn countdown
-		self.turn = ko.observable(data.turn);
-		self.phase = ko.observable(phases[data.phase]);
-
-		var endDate = new Date(data.phaseEnds);
-
-		var countdown = endDate - new Date().getTime();
-		var countdownArray = new Array();
-
-		var DAY = 24 * 60 * 60 * 1000;
-		var HOUR = 60 * 60 * 1000;
-		var MINUTE = 60 * 1000;
-		var SECOND = 1000;
-
-		countdownArray[0] = to_00_str(Math.floor(countdown / DAY));
-		countdownArray[1] = to_00_str(Math.floor((countdown - countdownArray[0] * DAY) / HOUR));
-		countdownArray[2] = to_00_str(Math.floor((countdown - countdownArray[1] * HOUR - countdownArray[0] * DAY) / MINUTE));
-		self.phaseCountDown = ko.observable(countdownArray[0] + "d " + countdownArray[1] + "h " + countdownArray[2] + "m");
-		//self.phaseCountDown=self.turnCountDown;
 	}
 
 	function GalaxyViewModel(data) {
@@ -750,6 +847,8 @@ requireGW([
 		/*this.data = this.data.sort(function (a, b) {
 		return parseFloat(b.Rating) - parseFloat(a.Rating);
 		});*/
+		self.money = 0;
+		self.aliveM = true;
 
 		var tables_parent = $('<div></div>');
 		tables_parent.attr('id', ladder_name);
@@ -763,7 +862,7 @@ requireGW([
 
 		var table = $("<table></table>");
 		tables_parent.append(table);
-		self.players = []
+		players = []
 
 		for (var x = 0; x < self.data.length; x++) {
 			var player = self.data[x];
@@ -777,6 +876,7 @@ requireGW([
 			if (player.id == playerId) {
 				row.attr('id', 'current_player');
 				self.money = player.wealth;
+				self.aliveM = player.alive;
 			}
 			if (player.alive) {
 				alive.css('color', "green");
@@ -803,11 +903,18 @@ requireGW([
 			//row.append(score);
 			//row.attr('pid',player.Id);
 			table.append(row);
-			self.players.push(player.name);
+			players.push(new Player(player.id, player.name, player.faction));
 		};
 		self.table = tables_parent;
 		$('body').append(self.table);
 		self.ready = true;
+	}
+
+	function Player(id, name, faction) {
+		self = this;
+		self.id = id;
+		self.name = name;
+		self.facion = faction;
 	}
 
 	function factionsLeaderboards(data, ladder_name, title) {
@@ -974,6 +1081,7 @@ requireGW([
 				$.get(url + "/cdm/players", function (players) {
 					lb2 = new mercsLeaderboards(players, 'mercenaries-board', "Mercenaries", playerId);
 					model.money(lb2.money);
+					model.alive(lb2.aliveM);
 					if (playerKey == null) {
 						createUser(playerName, playerId);
 					}
@@ -1080,6 +1188,31 @@ requireGW([
 			},
 			'type': 'PUT',
 			'url': url + "/cdm_private/" + PID.toString(),
+			'data': postData
+		});
+	}
+
+	function sendMoney(ammount, player, subject, object, keyInput, turn) {
+		var obj = {
+			order: "transfer",
+			player: player,
+			key: keyInput,
+			subject: subject,
+			object: object,
+			ammount: ammount,
+			time: new Date().getTime(),
+			turn: turn
+		};
+
+		var postData = JSON.stringify(obj);
+
+		$.ajax({
+			headers: {
+				'Accept': 'application/json',
+				'Content-Type': 'application/json'
+			},
+			'type': 'POST',
+			'url': url + "/cdm_private/",
 			'data': postData
 		});
 	}

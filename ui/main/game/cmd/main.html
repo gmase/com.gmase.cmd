@@ -3,10 +3,12 @@
   <head>
     <meta content="text/html; charset=utf-8" http-equiv="content-type">
     <title>main</title>
-	<link href="test.css" rel="stylesheet" type="text/css">
 	<link href="bundle://boot/boot.css" rel="stylesheet" type="text/css" />
+	<link href="test.css" rel="stylesheet" type="text/css">
+
     <link href="coui://ui/main/shared/css/landing_page.css" rel="stylesheet" type="text/css" />
 	<script src="bundle://boot/boot.js" type="text/javascript"></script>
+	<script src="jquery.easy-autocomplete.min.js"></script>
 	<script src="coui://ui/main/game/galactic_war/shared/js/easeljs-0.7.1.min.js"></script>
     <script src="coui://ui/main/shared/js/commander_utility.js" type="text/javascript"></script>
     <script src="coui://ui/main/shared/js/playfab.js" type="text/javascript"></script>
@@ -14,8 +16,6 @@
 	<script src="cmd_star.js" type="text/javascript"></script>
 	<script src="cmd_nebulae.js" type="text/javascript"></script>
     <script src="cmd_board.js" type="text/javascript"></script>
-
-	
   </head>
   <body>
   <!--- VISUAL TREATMENTS ---->
@@ -24,16 +24,40 @@
     <canvas id="galaxy-map" height="800" width="800" data-bind="attr: { height: galaxy.canvasHeight(), width: galaxy.canvasWidth()}"> Este texto se muestra si
       no soporta el canvas </canvas>
 	  
+<!-- REGENERATE DIALOG -->
+	<div class="pop_up_menu" data-bind= "visible: regenerateDialog">
+	<p class="info_text">
+	Your commander was annihilated on the last fight, however you can regenerate it in a day at the cost of 10 Tau
+	</p>
+	<button id="regenerate_com" data-bind= "click: tryRegenerate, visible:hasMoney, click_sound: 'default', rollover_sound: 'default'" >Regenerate</button>
+	<button id="dont_regenerate_com" data-bind= "click: hideRegenerateDialog,click_sound: 'default', rollover_sound: 'default'" >Not now</button>
+	</div>
 
+<!-- MONEY TRANSFER DIALOG -->
+	<div class="pop_up_menu" data-bind= "visible: sendMoneyDialog">
+	<p class="head_text">
+	You can send any ammount of Tau to another player from your <span data-bind="text: money"></span> avialable
+	</p>
+	<!-- valueUpdate: 'transferPlayerName'"-->
+	<div class="info_text">
+	<input id="ammount" data-bind="value: intendedAmmount, valueUpdate: 'afterkeydown'" ></input> Tau to
+	<p></p>
+	<input id="searchbox" data-bind="textInput: transferTarget"></input>
+	</div>
+	<button data-bind= "click: trySendMoney, visible:canSend, click_sound: 'default', rollover_sound: 'default'" >Send</button>
+	<button data-bind= "click: hideSendMoneyDialog, click_sound: 'default', rollover_sound: 'default'" >Not now</button>
+	</div>
 	
 	<div id="header" class="ignoremouse">
         <div class="btn_std_ix btn_back_small" data-bind="click: back">
             <span class="glyphicon glyphicon-chevron-left carat"></span>
         </div>
 	    <div id="player_info">
+		<img id="dead_icon" src="coui://ui/main/game/live_game/img/orders_bar/icons_orders_energy_hold.png" data-bind= "visible: alive!=true, click: showRegenerateDialog, click_sound: 'default', rollover_sound: 'default'"/>
+		<img id="alive_icon" src="coui://ui/main/game/live_game/img/orders_bar/icons_orders_energy_consume.png" data-bind= "visible: alive"/>
 			<div id="money">
 				<span>Available Tau:</span>
-				<span data-bind="text: money"></span>
+				<span data-bind="text: money"></span><button id="send_money" data-bind= "click: showSendMoneyDialog, click_sound: 'default', rollover_sound: 'default'" >Send</button>
 		    </div>
 			<div id="turn_info">
 				<span>Turn:</span>
