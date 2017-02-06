@@ -2,7 +2,7 @@
     position: absolute;
     top: 8%;
     left: 0px;
-    height: 92%;
+    height: 100%;
     width: 100%;
     overflow: hidden;
     /*background: transparent url('coui://ui/main/game/galactic_war/gw_play/backdrop.png') center no-repeat;*/
@@ -21,6 +21,56 @@ html, body {
 	background: none;
 }
 
+
+
+#player_info {
+	float: left;
+	right:5%;
+	top:1%;
+	position: absolute;
+    font-family: 'Sansation Bold';
+    font-size: 16px;
+    color: #DDDDDD;
+    /*text-shadow: 0px 0px 5px #CCCCCC;*/
+}
+
+.player_values{
+    color: #88FFAA;
+    text-shadow: 0px 0px 15px #88FFAA;
+}
+
+.horizontal_menu{
+	margin-top:10px;
+	display: inline-block;
+}
+
+.horizontal_menu li{
+	float:left;
+	margin-left:100px;
+	line-height:20px;
+	vertical-align:middle;
+}
+
+.vertical_menu{
+	display: block;
+}
+
+.cmd_menu_title{
+	font-size: 30px;
+	line-height:25px;
+}
+
+.vertical_menu li{
+	float:none;
+}
+
+.time_left
+{
+	font-family:sans-serif;
+	font-style: italic;
+	font-size:14px;
+}
+
 #selected-system-anchor {
     position: fixed;
 }
@@ -37,11 +87,12 @@ html, body {
     }
 
 #header {
-    height: 8%;
+    height: 105px;
     width: 100%;
     position: absolute;
     top: 0px;
 	left:0px;
+	opacity: 0.8;
 	background: transparent url('img/cmd_logo.png') center no-repeat;
 }
 
@@ -69,7 +120,7 @@ li.faction_line{
 
 .pop_up_menu{
 	text-align: center;
-    height: 20%;
+    height: 300px;
     width: 30%;
     position: absolute;
 	right:35%;
@@ -140,38 +191,11 @@ img.faction_icon{
 	background-size: 30px 30px;*/
 }
 
-tr.faction1{
-		background: url('img/icon_faction_1.png') no-repeat;
-		background-size: 20px 20px;
-		padding-top: 100px;
-	}
-tr.faction2{
-		background: url('img/icon_faction_2.png') no-repeat;
-		background-size: 20px 20px;
-		padding-top: 100px;
-	}
-tr.faction3{
-		background: url('img/icon_faction_3.png') no-repeat;
-		background-size: 20px 20px;
-		padding-top: 100px;
-	}
-
 #system-column {
     height: 100%;
     background: rgba(0, 0, 0, 0.2);
     text-align: left;
     float: right;
-}
-
-#player_info {
-	float: right;
-	right:5%;
-	top:1%;
-	position: absolute;
-    font-family: 'Sansation Bold';
-    font-size: 12px;
-    color: #88FFAA;
-    text-shadow: 0px 0px 20px #88FFAA;
 }
 
 
@@ -183,8 +207,8 @@ tr.faction3{
 #mercenaries-board {
     width: 350px;
     text-align: left;
-    top: 10%;
-	left: 80%;
+    top: 150px;
+	right: 50px;
     background: rgba(11, 26, 31, 0.9);
     padding: 16px 0px 16px 16px;
     box-shadow: 0px 0px 40px rgb(0, 0, 0);
@@ -213,8 +237,8 @@ tr.faction3{
 #faction-board {
     width: 350px;
     text-align: left;
-    top: 10%;
-	left: 1%;
+    top: 150px;
+	left: 50px;
     background: rgba(11, 26, 31, 0.9);
     padding: 16px 0px 16px 16px;
     box-shadow: 0px 0px 40px rgb(5, 5, 5);

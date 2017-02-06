@@ -23,15 +23,24 @@
 <div class="container" data-bind="visible: true" style="display: none">
     <canvas id="galaxy-map" height="800" width="800" data-bind="attr: { height: galaxy.canvasHeight(), width: galaxy.canvasWidth()}"> Este texto se muestra si
       no soporta el canvas </canvas>
-	  
+
 <!-- REGENERATE DIALOG -->
 	<div class="pop_up_menu" data-bind= "visible: regenerateDialog">
-	<p class="info_text">
+	<div data-bind= "visible: regenerating">
+	<p class="head_text" >
+	Your commander is being regenerated and will be ready to fight again in a few hours
+	</p>
+	<button id="dont_regenerate_com" data-bind= "click: hideRegenerateDialog,click_sound: 'default', rollover_sound: 'default'" >Ok</button>
+	</div>
+	<div data-bind= "visible: !regenerating()">
+	<p class="head_text">
 	Your commander was annihilated on the last fight, however you can regenerate it in a day at the cost of 10 Tau
 	</p>
 	<button id="regenerate_com" data-bind= "click: tryRegenerate, visible:hasMoney, click_sound: 'default', rollover_sound: 'default'" >Regenerate</button>
 	<button id="dont_regenerate_com" data-bind= "click: hideRegenerateDialog,click_sound: 'default', rollover_sound: 'default'" >Not now</button>
 	</div>
+	</div>
+
 
 <!-- MONEY TRANSFER DIALOG -->
 	<div class="pop_up_menu" data-bind= "visible: sendMoneyDialog">
@@ -45,7 +54,7 @@
 	<input id="searchbox" data-bind="textInput: transferTarget"></input>
 	</div>
 	<button data-bind= "click: trySendMoney, visible:canSend, click_sound: 'default', rollover_sound: 'default'" >Send</button>
-	<button data-bind= "click: hideSendMoneyDialog, click_sound: 'default', rollover_sound: 'default'" >Not now</button>
+	<button data-bind= "click: hideSendMoneyDialog, click_sound: 'default', rollover_sound: 'default'" >Cancel</button>
 	</div>
 	
 	<div id="header" class="ignoremouse">
@@ -53,22 +62,43 @@
             <span class="glyphicon glyphicon-chevron-left carat"></span>
         </div>
 	    <div id="player_info">
-		<img id="dead_icon" src="coui://ui/main/game/live_game/img/orders_bar/icons_orders_energy_hold.png" data-bind= "visible: alive!=true, click: showRegenerateDialog, click_sound: 'default', rollover_sound: 'default'"/>
-		<img id="alive_icon" src="coui://ui/main/game/live_game/img/orders_bar/icons_orders_energy_consume.png" data-bind= "visible: alive"/>
-			<div id="money">
-				<span>Available Tau:</span>
-				<span data-bind="text: money"></span><button id="send_money" data-bind= "click: showSendMoneyDialog, click_sound: 'default', rollover_sound: 'default'" >Send</button>
-		    </div>
-			<div id="turn_info">
-				<span>Turn:</span>
-				<span data-bind="text: turn"></span>
-			</div>
-			<div id="phase_info">
-				<span>Phase:</span>
-				<span  data-bind="text: phase"></span>
-				<span data-bind="text: phaseCountDown"></span>
-				<span>left</span>
-			</div>
+
+		
+		<ul class="horizontal_menu">
+			<li data-bind= "visible: isFactionLeader">
+				<ul class="vertical_menu">
+				<li class="cmd_menu_title"><span data-bind="text: myFaction"></span> 
+				<img height="30" data-bind="attr: { src: myFactionIcon}, click_sound: 'default', rollover_sound: 'default'"/></li> 
+					</li>
+					<li>Available Tau: <span class="player_values" data-bind="text: money"></span>
+					<img id="send_money" src="coui://ui/main/game/cmd/img/sendTauFaction.png" data-bind= "click: showSendMoneyDialog, click_sound: 'default', rollover_sound: 'default'"/>
+				</ul>
+			</li>
+			<li>
+				<ul  class="vertical_menu">
+				<li class="cmd_menu_title"><span data-bind="text: playerName"></span> 
+				<img id="dead_icon" height="30" src="coui://ui/main/game/live_game/img/orders_bar/icons_orders_energy_hold.png" data-bind= "visible: !alive(), click: showRegenerateDialog, click_sound: 'default', rollover_sound: 'default'"/>
+					<img id="alive_icon" height="30"  src="coui://ui/main/game/live_game/img/orders_bar/icons_orders_energy_consume.png" data-bind= "visible: alive()"/></li> 
+					</li>
+					<li>Available Tau: <span class="player_values" data-bind="text: money"></span>
+					<img id="send_money" src="coui://ui/main/game/cmd/img/sendTau.png" data-bind= "click: showSendMoneyDialog, click_sound: 'default', rollover_sound: 'default'"/>
+				</ul>
+			</li>
+			
+			<li id="turn_info">
+				<ul class="vertical_menu">
+				<li class="cmd_menu_title">
+					Galactic war
+				</li>
+				<li>
+				Week: <span class="player_values" data-bind="text: turn"></span>
+				</li>
+				<li>
+				Current phase: <span class="player_values" data-bind="text: phase"></span>  -  <span class="time_left player_values" data-bind="text: phaseCountDown"></span> <span class="time_left player_values" data-bind="text: nextPhase"></span>
+				</li>
+				</ul>
+			</li>
+		</ul>
 		</div>
     </div>
 		

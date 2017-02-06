@@ -1,13 +1,13 @@
 $(document).ready(function () {
-	$('loc').each(function (index) {
-		var name;
-		name = "CMD";
-		if ($(this).html() == "Settings") {
-			$(this).parent().after('<div class="nav_item nav_item nav_item_text btn_std_ix" id = "cmd" onclick = "gotoCMD()"><loc>' + name + '</loc></div>')
-		}
-	})
+
+
+    $( '#nav_quit' ).before( '<div id="nav_cmd" style="position:relative" class="nav_item nav_item_text btn_std_ix community-nav"  data-bind="click_sound: \'default\', rollover_sound: \'default\'" onclick = "gotoCMD()"><loc>CMD</loc></div>' );
+	
 })
 function gotoCMD() {
 	window.location.href = "coui://ui/main/game/cmd/main.html";
 	return;
 }
+
+
+

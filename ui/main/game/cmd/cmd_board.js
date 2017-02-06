@@ -9,6 +9,18 @@ factionColors[2] = [1, 0, 1];
 factionColors[3] = [1, 1, 0];
 var regenerateCost = 10;
 
+	//TODO try get calls here
+	var url = "https://mingersinatiormingiedste:9f10cc3e4e71559e26a642d996c0238f80852b36@gmase.cloudant.com";
+
+	//Ver en exodus o PAstats como guardar un dato en localStorage
+	var playerName = decode(localStorage.uberName);
+
+	var playerKey = localStorage.cmd_playerKey;
+	var playerId = -1;
+
+	var turn;
+	
+
 var phases = [];
 phases[0] = "Plan";
 phases[1] = "Battle";
@@ -185,21 +197,53 @@ requireGW([
 	function GameViewModel(data) {
 		var self = this;
 
+		self.playerName=ko.observable(playerName);
 		self.regenerateDialog = ko.observable(false);
 		self.alive = ko.observable(true);
 		self.regenerating = ko.observable(false);
+		if (localStorage.cmd_regenerating == true)
+			self.regenerating(true);
+
 		self.sendMoneyDialog = ko.observable(false);
 		self.intendedAmmount = ko.observable(0);
 		self.transferTarget = ko.observable();
-		self.targetId=null;
+		self.targetId = null;
 
-		self.transferTargetId=ko.observable();
-		//self.hasMoney=ko.observable(true);
+		self.transferTargetId = ko.observable();
 
+		self.isFactionLeader = ko.observable(true);
+
+		self.factionLeaders = ko.observableArray();
+		self.myFaction=ko.observable(-1);
+
+		self.myFactionIndex = ko.computed(function () {
+			for (var i=0;i<self.factionLeaders().length;i++)
+			{
+				if (playerId==self.factionLeaders()[i][0])
+				{
+					self.myFaction(self.factionLeaders()[i][2]);
+					return i;
+				}
+			}
+				return -1;
+			}, this);
+
+		//self.myFactionIndex = ko.observable(1);
+		self.myFactionIcon =  ko.computed(function () {
+				return 'img/icon_faction_' + self.myFactionIndex().toString() + '.png';
+			}, this);
 
 		self.money = ko.observable(-3);
 		self.turn = ko.observable(data.turn);
 		self.phase = ko.observable(phases[data.phase]);
+		self.nextPhase = ko.computed(function () {
+				var next;
+				if (data.phase == 0)
+					next = "battle phase" 
+				else
+					next = "next turn"
+				return "till " + next;
+			}, this);
 
 		//End turn countdown
 		var endDate = new Date(data.phaseEnds);
@@ -214,13 +258,13 @@ requireGW([
 
 		countdownArray[0] = to_00_str(Math.floor(countdown / DAY));
 		countdownArray[1] = to_00_str(Math.floor((countdown - countdownArray[0] * DAY) / HOUR));
-		countdownArray[2] = to_00_str(Math.floor((countdown - countdownArray[1] * HOUR - countdownArray[0] * DAY) / MINUTE));
-		self.phaseCountDown = ko.observable(countdownArray[0] + "d " + countdownArray[1] + "h " + countdownArray[2] + "m");
+		//countdownArray[2] = to_00_str(Math.floor((countdown - countdownArray[1] * HOUR - countdownArray[0] * DAY) / MINUTE));
+		self.phaseCountDown = ko.observable(countdownArray[0] + "d " + countdownArray[1] + "h ");
 		//self.phaseCountDown=self.turnCountDown;
 
 		self.showRegenerateDialog = function () {
 			self.regenerateDialog(true);
-			self.intendedAmmount(10);
+			self.intendedAmmount(regenerateCost);
 		}
 		self.hideRegenerateDialog = function () {
 			self.regenerateDialog(false);
@@ -230,18 +274,20 @@ requireGW([
 			if (self.money() >= regenerateCost) {
 				self.money(self.money() - regenerateCost);
 				self.regenerating(true);
+				localStorage.cmd_regenerating = true;
 				self.hideRegenerateDialog();
+				//A special money transfer to regen comm
+				sendMoney(regenerateCost, playerId, playerId, "REGENERATE", playerKey, self.turn());
 			}
 		}
 
 		self.hasMoney = ko.computed(function () {
-				return (self.intendedAmmount()>0 && self.money() >= self.intendedAmmount());
+				return (self.intendedAmmount() > 0 && self.money() >= self.intendedAmmount() && self.intendedAmmount() % 1 == 0);
 			}, this);
-			
-		self.canSend= ko.computed(function () {
-				return (self.hasMoney() && self.transferTargetId()!=null);
+
+		self.canSend = ko.computed(function () {
+				return (self.hasMoney() && self.transferTargetId() != null && self.transferTargetId() != playerId);
 			}, this);
-		
 
 		//Money transfer dialog
 		self.showSendMoneyDialog = function () {
@@ -269,24 +315,24 @@ requireGW([
 
 			var searchbox = $("#searchbox");
 			var temp = searchbox.easyAutocomplete(autocomplete_options);
-			
+
 			//self.
-			
-			
+
+
 			searchbox.on('input change', function () {
-				var found=false;
+				var found = false;
 				if (self.transferTarget() != null) {
 					var text = self.transferTarget();
 					for (var x = 0; x < players.length; x++) {
 						var player = players[x];
 						if (player.name.toLowerCase() == text.toLowerCase()) {
-							self.transferTargetId (player.id);
-							found=true;
+							self.transferTargetId(player.id);
+							found = true;
 							break;
 						}
 					}
-					if(!found)
-						self.transferTargetId (null);
+					if (!found)
+						self.transferTargetId(null);
 				}
 			})
 
@@ -609,21 +655,18 @@ requireGW([
 		});
 
 		_.forEach(data.stars, self.addSystem);
+		for (var i = 0; i < data.paths.length; i++)
+			self.joinSystems(data.paths[i][0], data.paths[i][1]);
 
 		/*_.forEach(data.gates(), function(gate) {
 		self.joinSystems(gate[0], gate[1]);
 		});*/
 
-		/*self.joinSystems(0, 1);
-		self.joinSystems(1, 2);
-		self.joinSystems(2, 3);
-		self.joinSystems(3, 5);
-		self.joinSystems(5, 4);
-		self.joinSystems(4, 7);*/
+		/*
 		self.joinSystems(6, 7);
 		self.joinSystems(7, 8);
 		self.joinSystems(8, 9);
-		self.joinSystems(8, 10);
+		self.joinSystems(8, 10);*/
 
 		self.sortStage = function () {
 			sortContainer(self.stage);
@@ -935,7 +978,8 @@ requireGW([
 		var table = $("<ul></ul>");
 		//table.attr('class','faction');
 		tables_parent.append(table);
-		self.factions = []
+		self.factions = [];
+		self.factionLeaders = [];
 
 		for (var x = 0; x < self.data.length; x++) {
 			var faction = self.data[x];
@@ -969,9 +1013,10 @@ requireGW([
 
 				for (var i = 0; i < faction.leaders.length; i++) {
 					strLeaders = strLeaders + faction.leaders[i] + "; ";
+					self.factionLeaders.push([faction.leaders[i], x, faction.name]);
 				}
 
-				strLeaders = strLeaders.slice(0, -2);
+			strLeaders = strLeaders.slice(0, -2);
 			leaders.html(strLeaders);
 			wealth.html(faction.wealth);
 			score.html(faction.score);
@@ -991,7 +1036,6 @@ requireGW([
 	}
 
 	function StarsData(data) {
-		//this.data = data.stars;
 		var self = this;
 		self.stars = [];
 
@@ -999,6 +1043,18 @@ requireGW([
 			var star = data.stars[x];
 			nStar = new CMDStar(star.x, star.y, star.z, star.owner);
 			self.stars.push(nStar);
+		};
+	}
+	function PathsData(data) {
+		var self = this;
+		self.paths = [];
+
+		for (x in data.paths) {
+			var path = data.paths[x];
+			if (path.active) {
+				nPath = [path.origin, path.destiny];
+				self.paths.push(nPath);
+			}
 		};
 	}
 
@@ -1010,10 +1066,10 @@ requireGW([
 		self.phaseEnds = data.phase_ends;
 	}
 
-	function CMDGame(stars, money, turn) {
+	function CMDGame(stars, paths, turn) {
 		var self = this;
 		self.stars = stars;
-		self.money = money;
+		self.paths = paths;
 		self.turn = turn.turn;
 		self.phase = turn.phase;
 		self.turnEnds = turn.turnEnds;
@@ -1042,21 +1098,13 @@ requireGW([
 	var documentLoader = $(document).ready();
 	//var infoLoaded=typeof starsJs != 'undefined';
 
-	//TODO try get calls here
-	var url = "https://mingersinatiormingiedste:9f10cc3e4e71559e26a642d996c0238f80852b36@gmase.cloudant.com";
-
-	//Ver en exodus o PAstats como guardar un dato en localStorage
-	var playerName = decode(localStorage.uberName);
-
-	var playerKey = localStorage.cmd_playerKey;
-	var playerId = -1;
-
-	var turn;
-
 	// We can start when both are ready
 	$.when(
 		$.get(url + "/cdm/stars", function (starsInput) {
 			starsJs = new StarsData(starsInput);
+		}, 'json'),
+		$.get(url + "/cdm/paths", function (pathsInput) {
+			pathsJs = new PathsData(pathsInput);
 		}, 'json'),
 		$.get(url + "/cdm/currentTurn", function (turnInput) {
 			turn = new TurnData(turnInput);
@@ -1064,7 +1112,7 @@ requireGW([
 		documentLoader).then(function (
 			$document) {
 
-		var data = new CMDGame(starsJs.stars, money, turn);
+		var data = new CMDGame(starsJs.stars, pathsJs.paths, turn);
 		model = new GameViewModel(data);
 
 		//We won't use uberId because reasons? we'll use public PAstats id
@@ -1082,12 +1130,17 @@ requireGW([
 					lb2 = new mercsLeaderboards(players, 'mercenaries-board', "Mercenaries", playerId);
 					model.money(lb2.money);
 					model.alive(lb2.aliveM);
+					if (lb2.aliveM) {
+						localStorage.cmd_regenerating = false;
+						model.regenerating(false);
+					}
 					if (playerKey == null) {
 						createUser(playerName, playerId);
 					}
 				}, 'json');
 				$.get(url + "/cdm/factions", function (factions) {
 					lb = new factionsLeaderboards(factions, 'faction-board', "Factions");
+					model.factionLeaders(lb.factionLeaders);
 				}, 'json');
 			}
 		});
