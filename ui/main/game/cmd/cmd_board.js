@@ -4,22 +4,24 @@ var p;
 var starsJs;
 var factionColors = [];
 factionColors[0] = [1, 0, 0];
-factionColors[1] = [1, 1, 0];
+factionColors[1] = [0, 1, 1];
 factionColors[2] = [1, 0, 1];
 factionColors[3] = [1, 1, 0];
 var regenerateCost = 10;
 
-	//TODO try get calls here
-	var url = "https://mingersinatiormingiedste:9f10cc3e4e71559e26a642d996c0238f80852b36@gmase.cloudant.com";
+var emptyStarPrice = 10;
+var occupiedStarPrice = 50;
 
-	//Ver en exodus o PAstats como guardar un dato en localStorage
-	var playerName = decode(localStorage.uberName);
+//TODO try get calls here
+var url = "https://mingersinatiormingiedste:9f10cc3e4e71559e26a642d996c0238f80852b36@gmase.cloudant.com";
 
-	var playerKey = localStorage.cmd_playerKey;
-	var playerId = -1;
+//Ver en exodus o PAstats como guardar un dato en localStorage
+var playerName = decode(localStorage.uberName);
 
-	var turn;
-	
+var playerKey = localStorage.cmd_playerKey;
+var playerId = -1;
+
+var turn;
 
 var phases = [];
 phases[0] = "Plan";
@@ -196,50 +198,190 @@ requireGW([
 
 	function GameViewModel(data) {
 		var self = this;
+		
+		
+		self.alive = ko.observable(data.alive);
+		self.money = ko.observable();
+		self.turn = ko.observable(data.turn);
+		self.phase = ko.observable(phases[data.phase]);
+		self.regenerating=ko.observable(false);
+		self.factionLeaders = ko.observableArray(data.factionLeaders);
+		
+		
+		self.isFactionLeader = ko.observable(false);
+		self.myFactionMoney = ko.observable();
+		
+		self.myFaction = ko.observable(-1);
+		self.myFactionId = ko.observable(-1);
+		self.attackCost = ko.observable(emptyStarPrice);
 
-		self.playerName=ko.observable(playerName);
+		
+		//localStorage.cmd_turn
+		//localStorage.cmd_phase
+		//localStorage.cmd_tick
+		
+		//localStorage.cmd_money Expires every tick
+		//localStorage.cmd_regenerating
+		//localStorage.cmd_attacking Expires if localStorage.cmd_phase changes
+		
+		//Check changes
+		var newTick=false;
+		var newPhase=false;
+		if (data.tick!=localStorage.cmd_tick)
+		{
+			newTick=true;
+		}
+		if (newTick)
+		{
+			if (data.phase!=localStorage.cmd_phase)
+			{
+				newPhase=true;
+			}
+			
+		}
+		
+		
+		//Applay changes
+		if(newPhase)
+		{
+			localStorage.cmd_attacking="";
+		}
+		
+		if(newTick)
+		{
+			self.regenerating(false);
+			localStorage.cmd_regenerating = false;
+			self.money(parseInt(data.money));
+		}
+		else
+		{
+			if (localStorage.cmd_regenerating!=null)
+				self.regenerating(localStorage.cmd_regenerating);
+			if (localStorage.cmd_money!=null)
+				self.money(parseInt(localStorage.cmd_money));
+			if (localStorage.cmd_faction_money!=null)
+				self.myFactionMoney(parseInt(localStorage.cmd_faction_money));
+		}
+		
+		self.myFactionIndex = ko.computed(function () {
+				for (var i = 0; i < self.factionLeaders().length; i++) {
+					if (playerId == self.factionLeaders()[i][0]) {
+						self.myFaction(self.factionLeaders()[i][2]);
+						self.myFactionId(self.factionLeaders()[i][4]);
+						self.isFactionLeader(true);
+						if(newTick)
+							self.myFactionMoney(self.factionLeaders()[i][3]);
+						return i;
+					}
+				}
+				return -1;
+			}, this);
+			
+		//Save status in localStorage
+		localStorage.cmd_tick=data.tick;
+		localStorage.cmd_phase=data.phase;
+		localStorage.cmd_money=self.money();
+		localStorage.cmd_faction_money=self.myFactionMoney();
+		
+		
+		self.attackingSystems = ko.observableArray();
+		if (localStorage.cmd_attacking != null && localStorage.cmd_attacking.length > 0)
+			self.attackingSystems(JSON.parse(localStorage.cmd_attacking));
+		
+		
+
+		self.currentStar = ko.observable();
+
+		self.showStarDialog = ko.computed(function () {
+				if (self.currentStar() != null && data.stars[self.currentStar()].state == "available") {
+					return true;
+				}
+				return false;
+			}, this);
+
+		self.currentStarName = ko.computed(function () {
+				if (self.showStarDialog()) {
+					return data.stars[self.currentStar()].name;
+				}
+				return "";
+
+			}, this);
+
+		currentStarMaxPlayers = ko.computed(function () {
+				if (self.showStarDialog()) {
+					return data.stars[self.currentStar()].max_players;
+				}
+				return "";
+
+			}, this);
+			
+		currentStarWealth = ko.computed(function () {
+				if (self.showStarDialog()) {
+					return String(data.stars[self.currentStar()].wealth);
+				}
+				return "";
+
+			}, this);
+
+		self.currentStarOwner = ko.computed(function () {
+				if (self.showStarDialog()) {
+					return data.stars[self.currentStar()].owner;
+				}
+				return -1;
+
+			}, this);
+
+		self.currentStarCost = ko.computed(function () {
+				if (self.showStarDialog()) {
+					if(data.stars[self.currentStar()].owner == self.myFactionId())
+						return -1;
+					if (data.stars[self.currentStar()].owner == -1)
+						return emptyStarPrice;
+				}
+				return occupiedStarPrice;
+
+			}, this);
+
+		self.currentStarId = ko.computed(function () {
+				if (self.showStarDialog()) {
+					return data.stars[self.currentStar()].id;
+				}
+				return -1;
+
+			}, this);
+
+		self.playerName = ko.observable(playerName);
 		self.regenerateDialog = ko.observable(false);
-		self.alive = ko.observable(true);
-		self.regenerating = ko.observable(false);
-		if (localStorage.cmd_regenerating == true)
-			self.regenerating(true);
+
 
 		self.sendMoneyDialog = ko.observable(false);
+		self.sendMoneyDialogFaction = ko.observable(false);
+
 		self.intendedAmmount = ko.observable(0);
 		self.transferTarget = ko.observable();
 		self.targetId = null;
 
 		self.transferTargetId = ko.observable();
 
-		self.isFactionLeader = ko.observable(true);
 
-		self.factionLeaders = ko.observableArray();
-		self.myFaction=ko.observable(-1);
 
-		self.myFactionIndex = ko.computed(function () {
-			for (var i=0;i<self.factionLeaders().length;i++)
-			{
-				if (playerId==self.factionLeaders()[i][0])
-				{
-					self.myFaction(self.factionLeaders()[i][2]);
-					return i;
-				}
-			}
-				return -1;
+		self.myFactionIcon = ko.computed(function () {
+				if (self.myFactionIndex() != -1)
+					return 'img/icon_faction_' + self.myFactionId().toString() + '.png';
+				return 'img/icon_faction_' + 0 + '.png';
 			}, this);
 
-		//self.myFactionIndex = ko.observable(1);
-		self.myFactionIcon =  ko.computed(function () {
-				return 'img/icon_faction_' + self.myFactionIndex().toString() + '.png';
+		self.systemFactionIcon = ko.computed(function () {
+				if (self.currentStarOwner() != -1)
+					return 'img/icon_faction_' + self.currentStarOwner().toString() + '.png';
+				return 'img/no_faction.png';
 			}, this);
 
-		self.money = ko.observable(-3);
-		self.turn = ko.observable(data.turn);
-		self.phase = ko.observable(phases[data.phase]);
+
 		self.nextPhase = ko.computed(function () {
 				var next;
 				if (data.phase == 0)
-					next = "battle phase" 
+					next = "battle phase"
 				else
 					next = "next turn"
 				return "till " + next;
@@ -274,6 +416,7 @@ requireGW([
 			if (self.money() >= regenerateCost) {
 				self.money(self.money() - regenerateCost);
 				self.regenerating(true);
+				localStorage.cmd_money=self.money();
 				localStorage.cmd_regenerating = true;
 				self.hideRegenerateDialog();
 				//A special money transfer to regen comm
@@ -282,18 +425,75 @@ requireGW([
 		}
 
 		self.hasMoney = ko.computed(function () {
-				return (self.intendedAmmount() > 0 && self.money() >= self.intendedAmmount() && self.intendedAmmount() % 1 == 0);
+				return (parseInt(self.intendedAmmount()) > 0 && self.money() >= parseInt(self.intendedAmmount()) && self.intendedAmmount() % 1 == 0);
 			}, this);
 
 		self.canSend = ko.computed(function () {
 				return (self.hasMoney() && self.transferTargetId() != null && self.transferTargetId() != playerId);
 			}, this);
 
-		//Money transfer dialog
-		self.showSendMoneyDialog = function () {
-			self.intendedAmmount(5);
-			self.sendMoneyDialog(true);
+		self.canSendFaction = ko.computed(function () {
+				return (parseInt(self.intendedAmmount()) > 0 && self.myFactionMoney() >= parseInt(self.intendedAmmount()) && self.intendedAmmount() % 1 == 0 && self.transferTargetId() != null);
+			}, this);
 
+		//Attack dialog
+		self.tryAttack = function () {
+			sendAttackOrder(playerId, self.myFactionId(), self.currentStarId(), playerKey, self.turn());
+			//store attacking star;
+			self.attackingSystems().push(self.currentStarId());
+			localStorage.cmd_attacking = JSON.stringify(self.attackingSystems());
+			self.myFactionMoney(self.myFactionMoney() - self.currentStarCost());
+			localStorage.cmd_faction_money=self.myFactionMoney();
+		}
+
+		self.isAttacking = ko.computed(function () {
+			for (var i = 0; i < self.attackingSystems().length; i++)
+					if (self.attackingSystems()[i] == self.currentStarId())
+					{
+						return true;
+					}
+				return false;
+		}, this);
+
+		self.canAttack = ko.computed(function () {
+				//must be plan phase
+				//must be faction leader
+				//not already attacking the system
+				var valAttacking = false;
+				for (var i = 0; i < self.attackingSystems().length; i++)
+					if (self.attackingSystems()[i] == self.currentStarId()) {
+						valAttacking = true;
+						break;
+					}
+				var valNotOwned= self.currentStarCost()!=-1;
+					
+				var valPhase = self.phase() == "Plan";
+				var valLeader = self.myFaction() != -1;
+				
+				//has money for it
+				var valCost = self.currentStarCost() <= self.myFactionMoney();
+
+				return (valPhase && valLeader && !valAttacking && valCost && valNotOwned);
+			}, this);
+
+		//Money transfer dialog
+		self.showSendMoneyDialogFaction = function () {
+			return self.showSendMoneyDialog(true);
+		}
+		self.showSendMoneyDialogPlayer = function () {
+			return self.showSendMoneyDialog(false);
+		}
+
+		self.showSendMoneyDialog = function (faction) {
+			self.intendedAmmount(5);
+			var searchbox;
+			if (faction) {
+				self.sendMoneyDialogFaction(true);
+				searchbox = $("#searchboxFaction");
+			} else {
+				self.sendMoneyDialog(true);
+				searchbox = $("#searchbox");
+			}
 			var playerNames = []
 			for (var i = 0; i < players.length; i++)
 				playerNames.push(players[i].name);
@@ -312,12 +512,8 @@ requireGW([
 			//Autocomplete
 			//self.complete = searchbox.easyAutocomplete(autocomplete_options);
 			/* SETTING UP AUTOCOMPLETE */
-
-			var searchbox = $("#searchbox");
+			//var searchbox = $("#searchbox");
 			var temp = searchbox.easyAutocomplete(autocomplete_options);
-
-			//self.
-
 
 			searchbox.on('input change', function () {
 				var found = false;
@@ -338,12 +534,20 @@ requireGW([
 
 		}
 		self.hideSendMoneyDialog = function () {
+			self.sendMoneyDialogFaction(false);
 			self.sendMoneyDialog(false);
 		}
 		self.trySendMoney = function () {
 			self.sendMoneyDialog(false);
-			self.money(self.money() - self.intendedAmmount())
-			sendMoney(self.intendedAmmount(), playerId, playerId, self.transferTargetId(), playerKey, self.turn());
+			self.money(self.money() - parseInt(self.intendedAmmount()))
+			localStorage.cmd_money=self.money();
+			sendMoney(parseInt(self.intendedAmmount()), playerId, playerId, self.transferTargetId(), playerKey, self.turn());
+		}
+		self.trySendMoneyFaction = function () {
+			self.sendMoneyDialogFaction(false);
+			self.myFactionMoney(self.myFactionMoney() - parseInt(self.intendedAmmount()))
+			localStorage.cmd_faction_money=self.myFactionMoney();
+			sendMoney(parseInt(self.intendedAmmount()), playerId, self.myFactionId(), self.transferTargetId(), playerKey, self.turn());
 		}
 
 		self.useLocalServer = ko.observable().extend({
@@ -455,6 +659,7 @@ requireGW([
 		_.forEach(self.galaxy.systems(), function (system, star) {
 			system.click.subscribe(function () {
 				self.selection.star(star);
+				self.currentStar(star);
 			});
 		});
 	}
@@ -724,6 +929,7 @@ requireGW([
 		self.neighbors = ko.observableArray([]);
 		//self.biome = star.biome;
 		self.stage = stage;
+		self.attackers=star.attackers;
 
 		self.visited = ko.computed(function () {
 				return true
@@ -815,7 +1021,9 @@ requireGW([
 
 		/*System owner*/
 		//If no owner show star
-		var owner = self.star.owner
+		var owner = self.star.owner;
+		
+		var yOffset=10;
 
 			if (owner == "-1" || !owner) {
 				var icon = createBitmap({
@@ -824,10 +1032,10 @@ requireGW([
 					});
 				icon.z = 1;
 				self.systemDisplay.addChild(icon);
+				
 			} else {
 
 				var factionIcon = 'img/icon_faction_' + owner + '.png';
-
 				var iconColor = factionColors[owner];
 
 				self.icon = createBitmap({
@@ -837,25 +1045,35 @@ requireGW([
 						scale: 0.4
 					});
 				self.icon.z = 0;
-
-				/*
-				self.iconScale = ko.observable(2);
-				self.container = new createjs.Container();
-				self.container.z = Infinity;
-				self.container.scaleX = self.iconScale();
-				self.container.scaleY = self.iconScale();
-
-				self.offset = new createjs.Container();
-				self.offset.x = 0.5;
-				self.offset.y = 0.5;
-				 */
-
-				//self.container.addChild(self.offset);
-				//self.offset.addChild(self.icon);
 				self.systemDisplay.addChild(self.icon);
+				yOffset=30;
 			}
+		//Show attacking factions
+		
+		if (self.attackers!=null)
+		{
+			var offset=15;
+			var xOffset=-1*offset;
+			for (var i=0;i<self.attackers.length;i++)
+			{
+				var factionIcon = 'img/icon_faction_' + self.attackers[i] + '.png';
+				var iconColor = factionColors[i];
 
-			ownerIcon.visible = false;
+					var icon = createBitmap({
+							url: factionIcon,
+							size: [128, 128],
+							color: iconColor,
+							scale: 0.22
+						});
+					icon.x=icon.x+xOffset;
+					icon.y=icon.y+yOffset;
+					icon.z = 1;
+					self.systemDisplay.addChild(icon);
+					xOffset=xOffset+2*offset;
+			}
+		}
+
+		ownerIcon.visible = false;
 		self.ownerColor = ko.observable();
 		/*ko.computed(function() {
 		ownerIcon.visible = (self.connected() && !!self.ownerColor()) || cheats.noFog();
@@ -1013,20 +1231,20 @@ requireGW([
 
 				for (var i = 0; i < faction.leaders.length; i++) {
 					strLeaders = strLeaders + faction.leaders[i] + "; ";
-					self.factionLeaders.push([faction.leaders[i], x, faction.name]);
+					self.factionLeaders.push([faction.leaders[i], x, faction.name, faction.wealth, faction.faction_id]);
 				}
 
-			strLeaders = strLeaders.slice(0, -2);
+				strLeaders = strLeaders.slice(0, -2);
 			leaders.html(strLeaders);
 			wealth.html(faction.wealth);
 			score.html(faction.score);
 
 			row.append(factionIcon);
-			row.append(rank);
+			//row.append(rank);
 			row.append(name);
-			row.append(leaders);
+			//row.append(leaders);
 			row.append(wealth);
-			row.append(score);
+			//row.append(score);
 			table.append(row);
 			self.factions.push(faction.name);
 		};
@@ -1041,7 +1259,7 @@ requireGW([
 
 		for (x in data.stars) {
 			var star = data.stars[x];
-			nStar = new CMDStar(star.x, star.y, star.z, star.owner);
+			nStar = new CMDStar(star.x, star.y, star.z, star.owner, star.name, star.max_players, star.attackers, star.state, star.star_id,star.wealth);
 			self.stars.push(nStar);
 		};
 	}
@@ -1062,18 +1280,23 @@ requireGW([
 		var self = this;
 		self.turn = data.turn;
 		self.phase = data.phase;
+		self.tick=data.tick;
 		self.turnEnds = data.turn_ends;
 		self.phaseEnds = data.phase_ends;
 	}
 
-	function CMDGame(stars, paths, turn) {
+	function CMDGame(stars, paths, turn, alive,money,factionLeaders) {
 		var self = this;
 		self.stars = stars;
 		self.paths = paths;
 		self.turn = turn.turn;
 		self.phase = turn.phase;
+		self.tick=turn.tick;
 		self.turnEnds = turn.turnEnds;
 		self.phaseEnds = turn.phaseEnds;
+		self.alive=alive;
+		self.money=money;
+		self.factionLeaders=factionLeaders;
 	}
 
 	function createUser(name, PID) {
@@ -1098,6 +1321,11 @@ requireGW([
 	var documentLoader = $(document).ready();
 	//var infoLoaded=typeof starsJs != 'undefined';
 
+	//The variables we get from these files
+	var alive;
+	var playerMoney;
+	var factionLeaders=[];
+	
 	// We can start when both are ready
 	$.when(
 		$.get(url + "/cdm/stars", function (starsInput) {
@@ -1109,47 +1337,42 @@ requireGW([
 		$.get(url + "/cdm/currentTurn", function (turnInput) {
 			turn = new TurnData(turnInput);
 		}, 'json'),
-		documentLoader).then(function (
-			$document) {
-
-		var data = new CMDGame(starsJs.stars, pathsJs.paths, turn);
-		model = new GameViewModel(data);
-
-		//We won't use uberId because reasons? we'll use public PAstats id
-		//var playerId=api.net.uberId();
+		
 		$.ajax({
 			url: ('http://pastats.com/report/getplayerid?ubername=' + playerName),
 			dataType: 'text',
-			error: function () {
-				//TODO: This alert is a placeholder for a proper pop up
-				alert("You must install and play with PAstats first");
-			},
 			success: function (PID) {
 				playerId = "U_" + PID;
+			}
+		}),
+			
+		documentLoader).then(function (
+			$document) {
+				
+		$.when(
+
+		//We won't use uberId because reasons? we'll use public PAstats id
+		//var playerId=api.net.uberId();
 				$.get(url + "/cdm/players", function (players) {
 					lb2 = new mercsLeaderboards(players, 'mercenaries-board', "Mercenaries", playerId);
-					model.money(lb2.money);
-					model.alive(lb2.aliveM);
-					if (lb2.aliveM) {
-						localStorage.cmd_regenerating = false;
-						model.regenerating(false);
-					}
+					playerMoney=lb2.money;
+					alive=lb2.aliveM;
 					if (playerKey == null) {
 						createUser(playerName, playerId);
 					}
-				}, 'json');
+				}, 'json'),
 				$.get(url + "/cdm/factions", function (factions) {
 					lb = new factionsLeaderboards(factions, 'faction-board', "Factions");
-					model.factionLeaders(lb.factionLeaders);
-				}, 'json');
-			}
-		});
+					factionLeaders=lb.factionLeaders;
+				}, 'json')).then(function($document) {
 
-		//sendOrders()
-
+		
+		//var data = new CMDGame(starsJs.stars, pathsJs.paths, turn);
+		var data = new CMDGame(starsJs.stars, pathsJs.paths, turn,alive,playerMoney,factionLeaders);
+		model = new GameViewModel(data);
+		
 		/*
-		self.sendAuth = function( )
-	{
+		self.sendAuth = function( ){
 		var client = self.client;
 
 		self.socket.emit( 'auth', { uberId: self.uberId, uberName: self.uberName, uberToken: self.uberToken, displayName: self.displayName, client: client } );
@@ -1200,15 +1423,18 @@ requireGW([
 		ko.applyBindings(model);
 
 		model.start();
-	});
+	});});
 
-	function sendOrders() {
+	function sendAttackOrder(player, subject, object, keyInput, turn) {
 		var obj = {
-			_id: "gmase",
 			order: "attack",
-			obj: "32"
+			player: player,
+			key: keyInput,
+			subject: subject,
+			object: object,
+			time: new Date().getTime(),
+			turn: turn
 		};
-
 		var postData = JSON.stringify(obj);
 
 		$.ajax({
@@ -1216,10 +1442,9 @@ requireGW([
 				'Accept': 'application/json',
 				'Content-Type': 'application/json'
 			},
-			'type': 'PUT',
-			'url': url + "/cdm_private/action",
+			'type': 'POST',
+			'url': url + "/cdm_private/",
 			'data': postData
-			//'dataType': 'json'
 		});
 	}
 

@@ -117,10 +117,21 @@ li.faction_line{
 	margin-right: 4px;
 	box-shadow: 0px 0px 3px #000;
 }
+.float-right{
+	float:right;
+	margin-right:30px;
+}
+
+.attacking{
+	font-size:18px;
+    color: #FF3333;
+    text-shadow: 0px 0px 8px #FFAAAA;
+	
+}
 
 .pop_up_menu{
 	text-align: center;
-    height: 300px;
+    height: 280px;
     width: 30%;
     position: absolute;
 	right:35%;
@@ -132,7 +143,7 @@ li.faction_line{
 
 button{
 	margin-left:20px;
-	font-size: 25px;
+	font-size: 22px;
 }
 
 
@@ -204,10 +215,28 @@ img.faction_icon{
     color: #FFFFFF;
 }
 
+#system-info-board {
+    width:300px;
+    text-align: left;
+    top: 150px;
+	left: 50px;
+    background: rgba(11, 26, 31, 0.9);
+    padding: 16px 0px 16px 16px;
+    box-shadow: 0px 0px 40px rgb(0, 0, 0);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    position: absolute;
+    float: right;
+    margin: 10px;
+    max-height: 30%;
+    overflow-y: auto;
+	font-size:15px;
+}
+
+
 #mercenaries-board {
     width: 350px;
     text-align: left;
-    top: 150px;
+    top: 55%;
 	right: 50px;
     background: rgba(11, 26, 31, 0.9);
     padding: 16px 0px 16px 16px;
@@ -216,7 +245,7 @@ img.faction_icon{
     position: absolute;
     float: right;
     margin: 10px;
-    max-height: 90%;
+    max-height: 40%;
     overflow-y: auto;
 }
 
@@ -238,7 +267,7 @@ img.faction_icon{
     width: 350px;
     text-align: left;
     top: 150px;
-	left: 50px;
+	right: 50px;
     background: rgba(11, 26, 31, 0.9);
     padding: 16px 0px 16px 16px;
     box-shadow: 0px 0px 40px rgb(5, 5, 5);

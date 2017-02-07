@@ -44,17 +44,51 @@
 
 <!-- MONEY TRANSFER DIALOG -->
 	<div class="pop_up_menu" data-bind= "visible: sendMoneyDialog">
-	<p class="head_text">
-	You can send any ammount of Tau to another player from your <span data-bind="text: money"></span> avialable
-	</p>
-	<!-- valueUpdate: 'transferPlayerName'"-->
-	<div class="info_text">
-	<input id="ammount" data-bind="value: intendedAmmount, valueUpdate: 'afterkeydown'" ></input> Tau to
-	<p></p>
-	<input id="searchbox" data-bind="textInput: transferTarget"></input>
+		<p class="head_text">
+		You can send any ammount of Tau to another player from your <span data-bind="text: money"></span> avialable
+		</p>
+		<div class="info_text">
+			<input id="ammount" data-bind="value: intendedAmmount, valueUpdate: 'afterkeydown'" ></input> Tau to
+			<p></p>
+			<input id="searchbox" data-bind="textInput: transferTarget"></input>
+		</div>
+			<button data-bind= "click: trySendMoney, visible:canSend, click_sound: 'default', rollover_sound: 'default'" >Send</button>
+			<button data-bind= "click: hideSendMoneyDialog, click_sound: 'default', rollover_sound: 'default'" >Cancel</button>
 	</div>
-	<button data-bind= "click: trySendMoney, visible:canSend, click_sound: 'default', rollover_sound: 'default'" >Send</button>
-	<button data-bind= "click: hideSendMoneyDialog, click_sound: 'default', rollover_sound: 'default'" >Cancel</button>
+	
+<!-- MONEY TRANSFER DIALOG FROM FACTION-->
+	<div class="pop_up_menu" data-bind= "visible: sendMoneyDialogFaction">
+		<p class="head_text">
+		You can send any ammount of Tau to another player from your faction's <span data-bind="text: myFactionMoney"></span> avialable
+		</p>
+		<div class="info_text">
+			<input id="ammount" data-bind="value: intendedAmmount, valueUpdate: 'afterkeydown'" ></input> Tau to
+			<p></p>
+			<input id="searchboxFaction" data-bind="textInput: transferTarget"></input>
+		</div>
+			<button data-bind= "click: trySendMoneyFaction, visible:canSendFaction, click_sound: 'default', rollover_sound: 'default'" >Send</button>
+			<button data-bind= "click: hideSendMoneyDialog, click_sound: 'default', rollover_sound: 'default'" >Cancel</button>
+	</div>
+	
+	
+
+<!-- SYSTEM DIALOG -->
+	<div id="system-info-board" data-bind= "visible: showStarDialog()">
+		<p>
+		<span data-bind="text: currentStarName()"></span>    <img height="30" class="float-right" data-bind="attr: { src: systemFactionIcon}"/>
+		</p>
+		<p>
+		Max players per side: <span data-bind="text: currentStarMaxPlayers()"></span>
+		</p>
+		<p>
+		Tau production: <span data-bind="text: currentStarWealth()"></span>
+		</p>
+		<p>
+		Invasion cost: <span data-bind="text: currentStarCost()"></span>
+		</p>
+
+		<button data-bind= "click: tryAttack, visible:canAttack(), click_sound: 'default', rollover_sound: 'default'" >Invade!</button>
+				<div class="attacking" data-bind= "visible: isAttacking()">Attacking this turn!</div>
 	</div>
 	
 	<div id="header" class="ignoremouse">
@@ -62,16 +96,14 @@
             <span class="glyphicon glyphicon-chevron-left carat"></span>
         </div>
 	    <div id="player_info">
-
-		
 		<ul class="horizontal_menu">
 			<li data-bind= "visible: isFactionLeader">
 				<ul class="vertical_menu">
 				<li class="cmd_menu_title"><span data-bind="text: myFaction"></span> 
 				<img height="30" data-bind="attr: { src: myFactionIcon}, click_sound: 'default', rollover_sound: 'default'"/></li> 
 					</li>
-					<li>Available Tau: <span class="player_values" data-bind="text: money"></span>
-					<img id="send_money" src="coui://ui/main/game/cmd/img/sendTauFaction.png" data-bind= "click: showSendMoneyDialog, click_sound: 'default', rollover_sound: 'default'"/>
+					<li>Available Tau: <span class="player_values" data-bind="text: myFactionMoney"></span>
+					<img id="send_money" src="coui://ui/main/game/cmd/img/sendTauFaction.png" data-bind= "click: showSendMoneyDialogFaction, click_sound: 'default', rollover_sound: 'default'"/>
 				</ul>
 			</li>
 			<li>
@@ -81,7 +113,7 @@
 					<img id="alive_icon" height="30"  src="coui://ui/main/game/live_game/img/orders_bar/icons_orders_energy_consume.png" data-bind= "visible: alive()"/></li> 
 					</li>
 					<li>Available Tau: <span class="player_values" data-bind="text: money"></span>
-					<img id="send_money" src="coui://ui/main/game/cmd/img/sendTau.png" data-bind= "click: showSendMoneyDialog, click_sound: 'default', rollover_sound: 'default'"/>
+					<img id="send_money" src="coui://ui/main/game/cmd/img/sendTau.png" data-bind= "click: showSendMoneyDialogPlayer, click_sound: 'default', rollover_sound: 'default'"/>
 				</ul>
 			</li>
 			
