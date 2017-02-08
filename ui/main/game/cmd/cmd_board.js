@@ -1024,6 +1024,7 @@ requireGW([
 		var owner = self.star.owner;
 		
 		var yOffset=10;
+		var playersHere=0;
 
 			if (owner == "-1" || !owner) {
 				var icon = createBitmap({
@@ -1037,6 +1038,7 @@ requireGW([
 
 				var factionIcon = 'img/icon_faction_' + owner + '.png';
 				var iconColor = factionColors[owner];
+				playersHere++;
 
 				self.icon = createBitmap({
 						url: factionIcon,
@@ -1056,6 +1058,7 @@ requireGW([
 			var xOffset=-1*offset;
 			for (var i=0;i<self.attackers.length;i++)
 			{
+				playersHere++;
 				var factionIcon = 'img/icon_faction_' + self.attackers[i] + '.png';
 				var iconColor = factionColors[i];
 
@@ -1073,6 +1076,22 @@ requireGW([
 			}
 		}
 
+		//Show battle Icon if there is a battle
+		if (playersHere>1)
+		{
+				var battleIcon = 'img/icons_command_attack_move.png';
+				//var iconColor = factionColors[i];
+					var icon = createBitmap({
+							url: battleIcon,
+							size: [60, 60],
+							//color: iconColor,
+							scale: 0.6
+						});
+					//icon.x=icon.x;
+					icon.y=icon.y+15;
+					icon.z = 1;
+					self.systemDisplay.addChild(icon);
+		}
 		ownerIcon.visible = false;
 		self.ownerColor = ko.observable();
 		/*ko.computed(function() {
@@ -1105,9 +1124,9 @@ requireGW([
 	function mercsLeaderboards(data, ladder_name, title, playerId) {
 		var self = this;
 		self.data = data.players;
-		/*this.data = this.data.sort(function (a, b) {
-		return parseFloat(b.Rating) - parseFloat(a.Rating);
-		});*/
+		self.data = self.data.sort(function (a, b) {
+			return parseInt(b.wealth) - parseInt(a.wealth);
+		});
 		self.money = 0;
 		self.aliveM = true;
 
@@ -1118,22 +1137,25 @@ requireGW([
 		var head = $('<div></div>');
 		head.attr('class', 'div_credits_title')
 		//head.attr('class', 'leaderboardTitle');
-		head.html(title);
+		head.html("Mercenaries - Tau & Status");
 		tables_parent.append(head);
 
-		var table = $("<table></table>");
+		var table = $("<ul></ul>");
 		tables_parent.append(table);
 		players = []
 
 		for (var x = 0; x < self.data.length; x++) {
 			var player = self.data[x];
-			var row = $("<tr></tr>");
-			var rank = $("<th></th>");
-			var name = $("<th></th>");
-			var faction = $("<th></th>");
-			var wealth = $("<th></th>");
-			var score = $("<th></th>");
-			var alive = $("<th></th>");
+			
+			
+			var row = $("<ul></ul>");
+			var factionIcon = $("<img></img>");
+			var rank = $("<li></li>");
+			var name = $("<li></li>");
+			var faction = $("<li></li>");
+			var wealth = $("<li></li>");
+			var score = $("<li></li>");
+			var alive = $("<li></li>");
 			if (player.id == playerId) {
 				row.attr('id', 'current_player');
 				self.money = player.wealth;
@@ -1146,19 +1168,27 @@ requireGW([
 				alive.css('color', "red");
 				alive.html("&#10008");
 			}
+			
+			factionIcon.attr('class', 'player_icon');
+			factionIcon.attr('src', "img/icon_faction_" + player.faction + ".png");
+			
+			rank.attr('class', 'player_line');
+			name.attr('class', 'player_line');
+			wealth.attr('class', 'player_line');
+			alive.attr('class', 'player_line');
 
-			/*name.attr('class', 'rank');
-			faction.attr('class', 'user');
-			wealth.attr('class', 'rating');
-			score.attr('class', 'rating');*/
 			rank.html((parseInt(x) + 1).toString());
 			name.html(player.name) //(parseInt(x) + 1).toString());
 			faction.html(player.faction);
 			wealth.html(player.wealth);
 			score.html(player.score);
+			
+			if (player.faction!="")
+				row.append(factionIcon);
+			else rank.attr('class', 'player_rank');
+			
 			row.append(rank);
 			row.append(name);
-			row.append(faction);
 			row.append(wealth);
 			row.append(alive);
 			//row.append(score);
@@ -1181,6 +1211,12 @@ requireGW([
 	function factionsLeaderboards(data, ladder_name, title) {
 		var self = this;
 		self.data = data.factions;
+		
+		self.data = self.data.sort(function (a, b) {
+			return ((parseInt(b.Stars)*100+parseInt(b.wealth)) - (parseInt(a.Stars)*100+parseInt(a.wealth)));
+		});
+		
+		
 		/*this.data = this.data.sort(function (a, b) {
 		return parseFloat(b.Rating) - parseFloat(a.Rating);
 		});*/
@@ -1190,7 +1226,7 @@ requireGW([
 
 		var head = $('<div></div>');
 		head.attr('class', 'div_credits_title');
-		head.html(title);
+		head.html("Factions - Systems & Tau");
 		tables_parent.append(head);
 
 		var table = $("<ul></ul>");
@@ -1214,6 +1250,7 @@ requireGW([
 			var wealth = $("<li></li>");
 			var leaders = $("<li></li>");
 			var score = $("<li></li>");
+			var stars = $("<li></li>");
 
 			factionIcon.attr('class', 'faction_icon');
 			factionIcon.attr('src', "img/icon_faction_" + faction.faction_id + ".png");
@@ -1224,6 +1261,7 @@ requireGW([
 			leaders.attr('class', 'faction_line');
 			wealth.attr('class', 'faction_line');
 			score.attr('class', 'faction_line');
+			stars.attr('class', 'faction_line');
 
 			rank.html((parseInt(x) + 1).toString());
 			name.html(faction.name) //(parseInt(x) + 1).toString());
@@ -1238,11 +1276,13 @@ requireGW([
 			leaders.html(strLeaders);
 			wealth.html(faction.wealth);
 			score.html(faction.score);
+			stars.html(String(faction.stars));
 
 			row.append(factionIcon);
 			//row.append(rank);
 			row.append(name);
 			//row.append(leaders);
+			row.append(stars);
 			row.append(wealth);
 			//row.append(score);
 			table.append(row);

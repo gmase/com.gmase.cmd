@@ -24,10 +24,10 @@
     "authors": [
         "gmase"
     ],
-    "icon": "",
-    "priority": 100,
+    "icon": "http://i.imgur.com/Cx9Xsac.png",
+    "priority": 50,
     "timestamp": 1482192000000,
-    "dependencies": [],
+    "dependencies": ["info.nanodesu.pastats"],
     "companions": [],
     "framework": false,
     "available": true,

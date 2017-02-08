@@ -99,11 +99,22 @@ html, body {
 li.faction_line{	
     display: inline-block;
 	margin-bottom:30px;
-	margin-left:5px;
-	/*margin: 0px 0px 0px 0px;
-	text-align: center;
-	padding-bottom: 20px;*/
+	margin-left:15px;
+
 }
+
+li.player_line{	
+    display: inline-block;
+	margin-bottom:5px;
+	margin-left:20px;
+}
+
+.player_rank{
+    display: inline-block;
+	margin-bottom:5px;
+	margin-left:40px;
+}
+
 
 #alive_icon{
 	height: 28px;
@@ -193,7 +204,6 @@ button{
 
 
 img.faction_icon{
-	
 	display: inline-block;  
 	height: 50px;
 	/*padding-right: 30px;
@@ -201,6 +211,14 @@ img.faction_icon{
 	background: url('img/icon_faction_2.png') center no-repeat;
 	background-size: 30px 30px;*/
 }
+
+img.player_icon{
+	display: inline-block;  
+	height: 20px;
+	margin-left:0px;
+}
+
+
 
 #system-column {
     height: 100%;
@@ -264,7 +282,7 @@ img.faction_icon{
 
 
 #faction-board {
-    width: 350px;
+    width: 400px;
     text-align: left;
     top: 150px;
 	right: 50px;
@@ -274,6 +292,7 @@ img.faction_icon{
     border: 1px solid rgba(255, 255, 255, 0.1);
     position: absolute;
     float: right;
+	font-size: 16px;
     margin: 10px;
     max-height: 40%;
     overflow-y: auto;
@@ -303,6 +322,7 @@ img.faction_icon{
 
     #faction-board .credits_list .system-display {
     }
+	
 
 .system-display .content {
     display: inline-block;
