@@ -1,13 +1,14 @@
 {
     "author": "Gmase",
-    "build": "00010",
+    "build": "00001",
     "context": "client",
-    "date": "2016-12-20",
-    "description": "Multiplayer Galactic War",
+    "date": "2017-02-08",
+    "description": "MMO Galactic War",
     "display_name": "CMD",
-    "forum": "http://TODO.com:82",
+    "forum": "https://forums.uberent.com/threads/rel-canis-major-dwarf-beta.72310/",
     "identifier": "com.gmase.cmd",
     "version": "1",
+	"signature": " ",
     "scenes": {
         "start": [
             "coui://ui/mods/com.gmase.cmd/start.js"
@@ -26,7 +27,6 @@
     ],
     "icon": "http://i.imgur.com/Cx9Xsac.png",
     "priority": 50,
-    "timestamp": 1482192000000,
     "dependencies": ["info.nanodesu.pastats"],
     "companions": [],
     "framework": false,
