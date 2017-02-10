@@ -4,9 +4,9 @@
     "context": "client",
     "date": "2017-02-08",
     "description": "MMO Galactic War",
-    "display_name": "CMD- Canis Major Dwarf",
+    "display_name": "CMD- Canis Major Dwarf DEV",
     "forum": "https://forums.uberent.com/threads/rel-canis-major-dwarf-beta.72310/",
-    "identifier": "com.gmase.cmd",
+    "identifier": "com.gmase.cmd_dev",
     "version": "1",
 	"signature": " ",
     "scenes": {
