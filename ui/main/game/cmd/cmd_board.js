@@ -27,12 +27,6 @@ statusMessage[2] ="Online";
 
 var url = "https://mingersinatiormingiedste:9f10cc3e4e71559e26a642d996c0238f80852b36@gmase.cloudant.com";
 
-//Ver en exodus o PAstats como guardar un dato en localStorage
-var playerName = decode(localStorage.uberName);
-
-var playerKey = localStorage.cmd_playerKey;
-var playerId = -1;
-
 var turn;
 
 var phases = [];
@@ -277,7 +271,7 @@ requireGW([
 		
 		self.myFactionIndex = ko.computed(function () {
 				for (var i = 0; i < self.factionLeaders().length; i++) {
-					if (playerId == self.factionLeaders()[i][0]) {
+					if (uberId == self.factionLeaders()[i][0]) {
 						self.myFaction(self.factionLeaders()[i][2]);
 						self.myFactionId(self.factionLeaders()[i][4]);
 						self.isFactionLeader(true);
@@ -437,7 +431,7 @@ requireGW([
 				localStorage.cmd_regenerating = true;
 				self.hideRegenerateDialog();
 				//A special money transfer to regen comm
-				sendMoney(regenerateCost, playerId, playerId, "REGENERATE", playerKey, self.turn());
+				sendMoney(regenerateCost, uberId, uberId, "REGENERATE", playerKey, self.turn());
 			}
 		}
 
@@ -446,7 +440,7 @@ requireGW([
 			}, this);
 
 		self.canSend = ko.computed(function () {
-				return (self.hasMoney() && self.transferTargetId() != null && self.transferTargetId() != playerId);
+				return (self.hasMoney() && self.transferTargetId() != null && self.transferTargetId() != uberId);
 			}, this);
 
 		self.canSendFaction = ko.computed(function () {
@@ -455,7 +449,7 @@ requireGW([
 
 		//Attack dialog
 		self.tryAttack = function () {
-			sendAttackOrder(playerId, self.myFactionId(), self.currentStarId(), playerKey, self.turn());
+			sendAttackOrder(uberId, self.myFactionId(), self.currentStarId(), playerKey, self.turn());
 			//store attacking star;
 			self.attackingSystems().push(self.currentStarId());
 			localStorage.cmd_attacking = JSON.stringify(self.attackingSystems());
@@ -558,13 +552,13 @@ requireGW([
 			self.sendMoneyDialog(false);
 			self.money(self.money() - parseInt(self.intendedAmmount()))
 			localStorage.cmd_money=self.money();
-			sendMoney(parseInt(self.intendedAmmount()), playerId, playerId, self.transferTargetId(), playerKey, self.turn());
+			sendMoney(parseInt(self.intendedAmmount()), uberId, uberId, self.transferTargetId(), playerKey, self.turn());
 		}
 		self.trySendMoneyFaction = function () {
 			self.sendMoneyDialogFaction(false);
 			self.myFactionMoney(self.myFactionMoney() - parseInt(self.intendedAmmount()))
 			localStorage.cmd_faction_money=self.myFactionMoney();
-			sendMoney(parseInt(self.intendedAmmount()), playerId, self.myFactionId(), self.transferTargetId(), playerKey, self.turn());
+			sendMoney(parseInt(self.intendedAmmount()), uberId, self.myFactionId(), self.transferTargetId(), playerKey, self.turn());
 		}
 
 		self.useLocalServer = ko.observable().extend({
@@ -572,9 +566,9 @@ requireGW([
 			});
 
 		// Get session information about the user, his game, environment, and so on
-		self.uberId = ko.observable().extend({
-				session: 'uberId'
-			});
+		//self.uberId = ko.observable().extend({ session: 'uberId'});
+        //self.displayName = ko.observable('').extend({ session: 'displayName' });
+
 
 		// Tracked for knowing where we've been for pages that can be accessed in more than one way
 		self.lastSceneUrl = ko.observable().extend({
@@ -1356,11 +1350,13 @@ requireGW([
 		self.logInStatus=logStatus;
 	}
 
-	function createUser(name, PID) {
-		playerKey = makeKey();
+	function createUser(name, PID,oldPID) {
+		playerKey=localStorage.cmd_playerKey;
+		if(localStorage.cmd_playerKey==null)
+			playerKey = makeKey();
 		//Sing up user with private key on remote DB
 		//TODO: This is not a good way to verify identities but we will use it for now
-		singUpUser(name, PID, playerKey);
+		singUpUser(name, PID, playerKey,oldPID);
 		localStorage.cmd_playerKey = playerKey;
 	}
 
@@ -1383,6 +1379,21 @@ requireGW([
 	var playerMoney;
 	var factionLeaders=[];
 	
+	
+
+	
+	// Get session information about the user, his game, environment, and so on
+	var uberIdIn = ko.observable().extend({ session: 'uberId'});
+	var uberId="U_"+uberIdIn();//("U_"+uberId());
+    var displayName = ko.observable('').extend({ session: 'displayName' });
+		
+	//Ver en exodus o PAstats como guardar un dato en localStorage
+	var playerName = decode(localStorage.uberName);
+
+	var playerKey = localStorage.cmd_playerKey;
+	var playerId = -1;
+
+	
 	// We can start when both are ready
 	$.when(
 		$.get(url + "/cdm/stars", function (starsInput) {
@@ -1400,12 +1411,12 @@ requireGW([
 			dataType: 'text',
 			success: function (PID) {
 				playerId = "U_" + PID;
-				if (String(PID)=="-1")
+				/*if (String(PID)=="-1")
 				{
-					playerKey=null;
-					localStorage.cmd_playerKey=null;
-					logInStatus=0;
-				}
+					//playerKey=null;
+					//localStorage.cmd_playerKey=null;
+					//logInStatus=0;
+				}*/
 			}
 		}),
 			
@@ -1413,17 +1424,14 @@ requireGW([
 			$document) {
 				
 		$.when(
-
-		//We won't use uberId because reasons? we'll use public PAstats id
-		//var playerId=api.net.uberId();
 				$.get(url + "/cdm/players", function (players) {
-					lb2 = new mercsLeaderboards(players, 'mercenaries-board', "Mercenaries", playerId);
+					lb2 = new mercsLeaderboards(players, 'mercenaries-board', "Mercenaries", uberId);
 					playerMoney=lb2.money;
 					alive=lb2.aliveM;
-					if (playerKey == null && playerId!="U_-1") {
-						createUser(playerName, playerId);
-						logInStatus=1;
-					}
+					//TODO when all players are registered propertly we won't need to call createUser always
+					createUser(displayName(), uberId,playerId);
+					//logInStatus=1;
+					
 				}, 'json'),
 				$.get(url + "/cdm/factions", function (factions) {
 					lb = new factionsLeaderboards(factions, 'faction-board', "Factions");
@@ -1512,12 +1520,13 @@ requireGW([
 		});
 	}
 
-	function singUpUser(name, PID, keyInput) {
+	function singUpUser(name, PID, keyInput,oldId) {
 		var obj = {
 			_id: PID,
 			name: name,
 			order: "newUser",
 			key: keyInput,
+			oldId:oldId,
 			time: new Date().getTime()
 		};
 

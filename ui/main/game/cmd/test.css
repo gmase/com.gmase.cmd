@@ -21,8 +21,6 @@ html, body {
 	background: none;
 }
 
-
-
 #player_info {
 	float: left;
 	right:5%;
@@ -241,7 +239,7 @@ img.player_icon{
     width:300px;
     text-align: left;
     top: 150px;
-	left: 50px;
+	left: 405px;
     background: rgba(11, 26, 31, 0.9);
     padding: 16px 0px 16px 16px;
     box-shadow: 0px 0px 40px rgb(0, 0, 0);
@@ -258,8 +256,8 @@ img.player_icon{
 #mercenaries-board {
     width: 350px;
     text-align: left;
-    top: 55%;
-	right: 50px;
+    top: 150px;
+	left: 50px;
     background: rgba(11, 26, 31, 0.9);
     padding: 16px 0px 16px 16px;
     box-shadow: 0px 0px 40px rgb(0, 0, 0);
@@ -267,7 +265,7 @@ img.player_icon{
     position: absolute;
     float: right;
     margin: 10px;
-    max-height: 40%;
+    max-height: 80%;
     overflow-y: auto;
 }
 
