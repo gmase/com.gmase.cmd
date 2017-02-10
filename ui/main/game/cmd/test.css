@@ -71,6 +71,10 @@ html, body {
 	font-size:14px;
 }
 
+#log_in_status
+{
+	margin-top:15px;
+}
 #selected-system-anchor {
     position: fixed;
 }

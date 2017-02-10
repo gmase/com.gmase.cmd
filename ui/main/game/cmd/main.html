@@ -83,7 +83,7 @@
 		<p>
 		Tau production: <span data-bind="text: currentStarWealth()"></span>
 		</p>
-		<p>
+		<p data-bind="visible: showStarCost()">
 		Invasion cost: <span data-bind="text: currentStarCost()"></span>
 		</p>
 
@@ -95,6 +95,9 @@
         <div class="btn_std_ix btn_back_small" data-bind="click: back">
             <span class="glyphicon glyphicon-chevron-left carat"></span>
         </div>
+		<div id="log_in_status">
+			<span data-bind="text: logInStatus"></span>
+		</div>
 	    <div id="player_info">
 		<ul class="horizontal_menu">
 			<li data-bind= "visible: isFactionLeader">

@@ -12,7 +12,19 @@ var regenerateCost = 10;
 var emptyStarPrice = 10;
 var occupiedStarPrice = 50;
 
-//TODO try get calls here
+
+var logInStatus=2;
+/*
+0 User id not in pastats
+1 Waiting for sing up
+2 Ok
+*/
+var statusMessage=[];
+statusMessage[0] ="You can't sign in, your name isn't on PAstats";
+statusMessage[1] ="Sign in successful, in a few hours your name should appear in the mercenaries board";
+statusMessage[2] ="Online";
+
+
 var url = "https://mingersinatiormingiedste:9f10cc3e4e71559e26a642d996c0238f80852b36@gmase.cloudant.com";
 
 //Ver en exodus o PAstats como guardar un dato en localStorage
@@ -199,7 +211,7 @@ requireGW([
 	function GameViewModel(data) {
 		var self = this;
 		
-		
+		self.logInStatus=ko.observable(statusMessage[data.logInStatus]);
 		self.alive = ko.observable(data.alive);
 		self.money = ko.observable();
 		self.turn = ko.observable(data.turn);
@@ -307,7 +319,7 @@ requireGW([
 
 			}, this);
 
-		currentStarMaxPlayers = ko.computed(function () {
+		self.currentStarMaxPlayers = ko.computed(function () {
 				if (self.showStarDialog()) {
 					return data.stars[self.currentStar()].max_players;
 				}
@@ -315,7 +327,7 @@ requireGW([
 
 			}, this);
 			
-		currentStarWealth = ko.computed(function () {
+		self.currentStarWealth = ko.computed(function () {
 				if (self.showStarDialog()) {
 					return String(data.stars[self.currentStar()].wealth);
 				}
@@ -327,9 +339,10 @@ requireGW([
 				if (self.showStarDialog()) {
 					return data.stars[self.currentStar()].owner;
 				}
-				return -1;
+				return "-1";
 
 			}, this);
+			
 
 		self.currentStarCost = ko.computed(function () {
 				if (self.showStarDialog()) {
@@ -340,6 +353,10 @@ requireGW([
 				}
 				return occupiedStarPrice;
 
+			}, this);
+			
+		self.showStarCost = ko.computed(function () {
+				return self.currentStarCost()!=-1;
 			}, this);
 
 		self.currentStarId = ko.computed(function () {
@@ -367,12 +384,12 @@ requireGW([
 
 		self.myFactionIcon = ko.computed(function () {
 				if (self.myFactionIndex() != -1)
-					return 'img/icon_faction_' + self.myFactionId().toString() + '.png';
-				return 'img/icon_faction_' + 0 + '.png';
+					return 'img/icon_faction_' + String(self.myFactionId()) + '.png';
+				return 'img/icon_faction_0.png';
 			}, this);
 
 		self.systemFactionIcon = ko.computed(function () {
-				if (self.currentStarOwner() != -1)
+				if (self.currentStarOwner() != "-1")
 					return 'img/icon_faction_' + self.currentStarOwner().toString() + '.png';
 				return 'img/no_faction.png';
 			}, this);
@@ -1060,7 +1077,7 @@ requireGW([
 			{
 				playersHere++;
 				var factionIcon = 'img/icon_faction_' + self.attackers[i] + '.png';
-				var iconColor = factionColors[i];
+				var iconColor = factionColors[parseInt(self.attackers[i])];
 
 					var icon = createBitmap({
 							url: factionIcon,
@@ -1169,8 +1186,7 @@ requireGW([
 				alive.html("&#10008");
 			}
 			
-			factionIcon.attr('class', 'player_icon');
-			factionIcon.attr('src', "img/icon_faction_" + player.faction + ".png");
+
 			
 			rank.attr('class', 'player_line');
 			name.attr('class', 'player_line');
@@ -1184,7 +1200,12 @@ requireGW([
 			score.html(player.score);
 			
 			if (player.faction!="")
+			{
+				factionIcon.attr('class', 'player_icon');
+				factionIcon.attr('src', "img/icon_faction_" + player.faction + ".png");
 				row.append(factionIcon);
+				
+			}
 			else rank.attr('class', 'player_rank');
 			
 			row.append(rank);
@@ -1239,11 +1260,6 @@ requireGW([
 			var faction = self.data[x];
 
 			var row = $("<ul></ul>");
-			//row.attr('class', 'faction');
-			//row.attr('class', 'faction');
-			//row.attr('background-image', "url('img/icon_faction_2.png') no-repeat")
-			//row.attr('class', 'faction'+faction.faction_id.toString());
-
 			var factionIcon = $("<img></img>");
 			var rank = $("<li></li>");
 			var name = $("<li></li>");
@@ -1265,14 +1281,14 @@ requireGW([
 
 			rank.html((parseInt(x) + 1).toString());
 			name.html(faction.name) //(parseInt(x) + 1).toString());
-			var strLeaders = ''
+			var strLeaders = '';
 
 				for (var i = 0; i < faction.leaders.length; i++) {
 					strLeaders = strLeaders + faction.leaders[i] + "; ";
 					self.factionLeaders.push([faction.leaders[i], x, faction.name, faction.wealth, faction.faction_id]);
 				}
 
-				strLeaders = strLeaders.slice(0, -2);
+			strLeaders = strLeaders.slice(0, -2);
 			leaders.html(strLeaders);
 			wealth.html(faction.wealth);
 			score.html(faction.score);
@@ -1325,7 +1341,7 @@ requireGW([
 		self.phaseEnds = data.phase_ends;
 	}
 
-	function CMDGame(stars, paths, turn, alive,money,factionLeaders) {
+	function CMDGame(stars, paths, turn, alive,money,factionLeaders,logStatus) {
 		var self = this;
 		self.stars = stars;
 		self.paths = paths;
@@ -1337,6 +1353,7 @@ requireGW([
 		self.alive=alive;
 		self.money=money;
 		self.factionLeaders=factionLeaders;
+		self.logInStatus=logStatus;
 	}
 
 	function createUser(name, PID) {
@@ -1383,6 +1400,12 @@ requireGW([
 			dataType: 'text',
 			success: function (PID) {
 				playerId = "U_" + PID;
+				if (String(PID)=="-1")
+				{
+					playerKey=null;
+					localStorage.cmd_playerKey=null;
+					logInStatus=0;
+				}
 			}
 		}),
 			
@@ -1397,8 +1420,9 @@ requireGW([
 					lb2 = new mercsLeaderboards(players, 'mercenaries-board', "Mercenaries", playerId);
 					playerMoney=lb2.money;
 					alive=lb2.aliveM;
-					if (playerKey == null) {
+					if (playerKey == null && playerId!="U_-1") {
 						createUser(playerName, playerId);
+						logInStatus=1;
 					}
 				}, 'json'),
 				$.get(url + "/cdm/factions", function (factions) {
@@ -1408,7 +1432,7 @@ requireGW([
 
 		
 		//var data = new CMDGame(starsJs.stars, pathsJs.paths, turn);
-		var data = new CMDGame(starsJs.stars, pathsJs.paths, turn,alive,playerMoney,factionLeaders);
+		var data = new CMDGame(starsJs.stars, pathsJs.paths, turn,alive,playerMoney,factionLeaders,logInStatus);
 		model = new GameViewModel(data);
 		
 		/*
