@@ -3,27 +3,27 @@ var handlers;
 var p;
 var starsJs;
 var factionColors = [];
-factionColors[0] = [1, 0, 0];
-factionColors[1] = [0, 1, 1];
-factionColors[2] = [1, 0, 1];
-factionColors[3] = [1, 1, 0];
+factionColors[0] = [0, 176 / 255, 255 / 255];
+factionColors[1] = [145 / 255, 87 / 255, 199 / 255];
+factionColors[2] = [244 / 255, 125 / 255, 31 / 255];
+factionColors[3] = [236 / 255, 34 / 255, 35 / 255];
 var regenerateCost = 10;
 
 var emptyStarPrice = 10;
-var occupiedStarPrice = 50;
+var occupiedStarPrice = 30;
+var players = [];
+var factions = [];
 
-
-var logInStatus=2;
+var logInStatus = 2;
 /*
 0 User id not in pastats
 1 Waiting for sing up
 2 Ok
-*/
-var statusMessage=[];
-statusMessage[0] ="You can't sign in, your name isn't on PAstats";
-statusMessage[1] ="Sign in successful, in a few hours your name should appear in the mercenaries board";
-statusMessage[2] ="Online";
-
+ */
+var statusMessage = [];
+statusMessage[0] = "You can't sign in, your name isn't on PAstats";
+statusMessage[1] = "Sign in successful, in a few hours your name should appear in the mercenaries board";
+statusMessage[2] = "Online";
 
 var url = "https://mingersinatiormingiedste:9f10cc3e4e71559e26a642d996c0238f80852b36@gmase.cloudant.com";
 
@@ -32,8 +32,6 @@ var turn;
 var phases = [];
 phases[0] = "Plan";
 phases[1] = "Battle";
-
-var players = [];
 
 requireGW([
 		'coui://ui/main/game/galactic_war/shared/js/vecmath.js'
@@ -204,97 +202,99 @@ requireGW([
 
 	function GameViewModel(data) {
 		var self = this;
-		
-		self.logInStatus=ko.observable(statusMessage[data.logInStatus]);
+
+		self.logInStatus = ko.observable(statusMessage[data.logInStatus]);
 		self.alive = ko.observable(data.alive);
 		self.money = ko.observable();
 		self.turn = ko.observable(data.turn);
 		self.phase = ko.observable(phases[data.phase]);
-		self.regenerating=ko.observable(false);
+		self.regenerating = ko.observable(false);
 		self.factionLeaders = ko.observableArray(data.factionLeaders);
-		
-		
+
 		self.isFactionLeader = ko.observable(false);
 		self.myFactionMoney = ko.observable();
-		
+
 		self.myFaction = ko.observable(-1);
 		self.myFactionId = ko.observable(-1);
 		self.attackCost = ko.observable(emptyStarPrice);
 
-		
+		self.myWinner = ko.observable("-1");
+		self.myWinners = [];
+
 		//localStorage.cmd_turn
 		//localStorage.cmd_phase
 		//localStorage.cmd_tick
-		
+
 		//localStorage.cmd_money Expires every tick
 		//localStorage.cmd_regenerating
 		//localStorage.cmd_attacking Expires if localStorage.cmd_phase changes
-		
+		//localStorage.cmd_declared_winners
+
 		//Check changes
-		var newTick=false;
-		var newPhase=false;
-		if (data.tick!=localStorage.cmd_tick)
-		{
-			newTick=true;
+		var newTick = false;
+		var newPhase = false;
+		if (data.tick != localStorage.cmd_tick) {
+			newTick = true;
 		}
-		if (newTick)
-		{
-			if (data.phase!=localStorage.cmd_phase)
-			{
-				newPhase=true;
+		if (newTick) {
+			if (data.phase != localStorage.cmd_phase) {
+				newPhase = true;
 			}
-			
+
 		}
-		
-		
+
 		//Applay changes
-		if(newPhase)
-		{
-			localStorage.cmd_attacking="";
+		if (newPhase) {
+			localStorage.cmd_attacking = "";
+			localStorage.cmd_decalred_winners="";
 		}
-		
-		if(newTick)
-		{
+
+		if (newTick) {
 			self.regenerating(false);
 			localStorage.cmd_regenerating = false;
 			self.money(parseInt(data.money));
-		}
-		else
-		{
-			if (localStorage.cmd_regenerating!=null)
+		} else {
+			if (localStorage.cmd_regenerating != null)
 				self.regenerating(localStorage.cmd_regenerating);
-			if (localStorage.cmd_money!=null)
+			if (localStorage.cmd_money != null)
 				self.money(parseInt(localStorage.cmd_money));
-			if (localStorage.cmd_faction_money!=null)
+			if (localStorage.cmd_faction_money != null)
 				self.myFactionMoney(parseInt(localStorage.cmd_faction_money));
 		}
-		
+
 		self.myFactionIndex = ko.computed(function () {
 				for (var i = 0; i < self.factionLeaders().length; i++) {
 					if (uberId == self.factionLeaders()[i][0]) {
 						self.myFaction(self.factionLeaders()[i][2]);
 						self.myFactionId(self.factionLeaders()[i][4]);
 						self.isFactionLeader(true);
-						if(newTick)
+						if (newTick)
 							self.myFactionMoney(self.factionLeaders()[i][3]);
 						return i;
 					}
 				}
 				return -1;
 			}, this);
-			
+
 		//Save status in localStorage
-		localStorage.cmd_tick=data.tick;
-		localStorage.cmd_phase=data.phase;
-		localStorage.cmd_money=self.money();
-		localStorage.cmd_faction_money=self.myFactionMoney();
+		localStorage.cmd_tick = data.tick;
+		localStorage.cmd_phase = data.phase;
+		localStorage.cmd_money = self.money();
+		localStorage.cmd_faction_money = self.myFactionMoney();
 		
-		
+		if (localStorage.cmd_decalred_winners != null && localStorage.cmd_decalred_winners !="")
+			self.myWinners = JSON.parse(localStorage.cmd_decalred_winners);
+
+		self.declareWinner = function () {
+			sendWinnerDeclaration(self.currentStarId(), self.myWinner(), uberId, playerKey, self.turn());
+			self.myWinners.push([self.currentStarId(), self.myWinner()]);
+			localStorage.cmd_decalred_winners = JSON.stringify(self.myWinners);
+			self.myWinner("-1");
+		}
+
 		self.attackingSystems = ko.observableArray();
 		if (localStorage.cmd_attacking != null && localStorage.cmd_attacking.length > 0)
 			self.attackingSystems(JSON.parse(localStorage.cmd_attacking));
-		
-		
 
 		self.currentStar = ko.observable();
 
@@ -313,6 +313,30 @@ requireGW([
 
 			}, this);
 
+		self.currentStarAspirants = ko.computed(function () {
+				if (self.showStarDialog()) {
+					var output = [];
+					var star = data.stars[self.currentStar()];
+					var conflictNumber = star.attackers.length;
+					if (star.owner != "-1")
+						conflictNumber++;
+					if (conflictNumber >= 2) {
+						//Add attackers
+						for (var i = 0; i < star.attackers.length; i++) {
+							var faction = star.attackers[i];
+							output.push(factions[parseInt(faction)]);
+						}
+						//Add owner
+						if (star.owner != "-1") {
+							output.push(factions[parseInt(star.owner)]);
+						}
+						return output;
+					}
+				}
+				return null;
+
+			}, this);
+
 		self.currentStarMaxPlayers = ko.computed(function () {
 				if (self.showStarDialog()) {
 					return data.stars[self.currentStar()].max_players;
@@ -320,7 +344,7 @@ requireGW([
 				return "";
 
 			}, this);
-			
+
 		self.currentStarWealth = ko.computed(function () {
 				if (self.showStarDialog()) {
 					return String(data.stars[self.currentStar()].wealth);
@@ -336,11 +360,10 @@ requireGW([
 				return "-1";
 
 			}, this);
-			
 
 		self.currentStarCost = ko.computed(function () {
 				if (self.showStarDialog()) {
-					if(data.stars[self.currentStar()].owner == self.myFactionId())
+					if (data.stars[self.currentStar()].owner == self.myFactionId())
 						return -1;
 					if (data.stars[self.currentStar()].owner == -1)
 						return emptyStarPrice;
@@ -348,9 +371,9 @@ requireGW([
 				return occupiedStarPrice;
 
 			}, this);
-			
+
 		self.showStarCost = ko.computed(function () {
-				return self.currentStarCost()!=-1;
+				return self.currentStarCost() != -1;
 			}, this);
 
 		self.currentStarId = ko.computed(function () {
@@ -364,7 +387,6 @@ requireGW([
 		self.playerName = ko.observable(playerName);
 		self.regenerateDialog = ko.observable(false);
 
-
 		self.sendMoneyDialog = ko.observable(false);
 		self.sendMoneyDialogFaction = ko.observable(false);
 
@@ -373,8 +395,6 @@ requireGW([
 		self.targetId = null;
 
 		self.transferTargetId = ko.observable();
-
-
 
 		self.myFactionIcon = ko.computed(function () {
 				if (self.myFactionIndex() != -1)
@@ -388,13 +408,12 @@ requireGW([
 				return 'img/no_faction.png';
 			}, this);
 
-
 		self.nextPhase = ko.computed(function () {
 				var next;
 				if (data.phase == 0)
-					next = "battle phase"
+					next = "battle phase";
 				else
-					next = "next turn"
+					next = "next turn";
 				return "till " + next;
 			}, this);
 
@@ -427,7 +446,7 @@ requireGW([
 			if (self.money() >= regenerateCost) {
 				self.money(self.money() - regenerateCost);
 				self.regenerating(true);
-				localStorage.cmd_money=self.money();
+				localStorage.cmd_money = self.money();
 				localStorage.cmd_regenerating = true;
 				self.hideRegenerateDialog();
 				//A special money transfer to regen comm
@@ -454,17 +473,16 @@ requireGW([
 			self.attackingSystems().push(self.currentStarId());
 			localStorage.cmd_attacking = JSON.stringify(self.attackingSystems());
 			self.myFactionMoney(self.myFactionMoney() - self.currentStarCost());
-			localStorage.cmd_faction_money=self.myFactionMoney();
+			localStorage.cmd_faction_money = self.myFactionMoney();
 		}
 
 		self.isAttacking = ko.computed(function () {
-			for (var i = 0; i < self.attackingSystems().length; i++)
-					if (self.attackingSystems()[i] == self.currentStarId())
-					{
+				for (var i = 0; i < self.attackingSystems().length; i++)
+					if (self.attackingSystems()[i] == self.currentStarId()) {
 						return true;
 					}
 				return false;
-		}, this);
+			}, this);
 
 		self.canAttack = ko.computed(function () {
 				//must be plan phase
@@ -476,16 +494,43 @@ requireGW([
 						valAttacking = true;
 						break;
 					}
-				var valNotOwned= self.currentStarCost()!=-1;
-					
+				var valNotOwned = self.currentStarCost() != -1;
+
 				var valPhase = self.phase() == "Plan";
 				var valLeader = self.myFaction() != -1;
-				
+
 				//has money for it
 				var valCost = self.currentStarCost() <= self.myFactionMoney();
 
 				return (valPhase && valLeader && !valAttacking && valCost && valNotOwned);
 			}, this);
+
+		self.canDeclareWinner = ko.computed(function () { //If player is faction leader, if phase=battle, his faction is an aspirant and havent declared winner yet
+				var valLeader = self.myFaction() != -1;
+				var valPhase = self.phase() == "Battle";
+				var valAspirant = false;
+				var aspirants = self.currentStarAspirants();
+				if (aspirants != null)
+					for (var i = 0; i < aspirants.length; i++) {
+						if (self.myFactionId() == aspirants[i].id) {
+							valAspirant = true;
+							break;
+						}
+					}
+				var valAlreadyDone=false;
+				if(valLeader && valPhase && valAspirant)
+				for (var i=0;i<self.myWinners.length;i++)
+					if (self.myWinners[i][0]==self.currentStarId())
+					{
+						valAlreadyDone=true;
+						break;
+					}
+				return valLeader && valPhase && valAspirant && !valAlreadyDone;
+			}, this);
+			
+		self.winnerSelected= ko.computed(function () {
+			return self.myWinner()!="-1";	
+		}, this);
 
 		//Money transfer dialog
 		self.showSendMoneyDialogFaction = function () {
@@ -551,13 +596,13 @@ requireGW([
 		self.trySendMoney = function () {
 			self.sendMoneyDialog(false);
 			self.money(self.money() - parseInt(self.intendedAmmount()))
-			localStorage.cmd_money=self.money();
+			localStorage.cmd_money = self.money();
 			sendMoney(parseInt(self.intendedAmmount()), uberId, uberId, self.transferTargetId(), playerKey, self.turn());
 		}
 		self.trySendMoneyFaction = function () {
 			self.sendMoneyDialogFaction(false);
 			self.myFactionMoney(self.myFactionMoney() - parseInt(self.intendedAmmount()))
-			localStorage.cmd_faction_money=self.myFactionMoney();
+			localStorage.cmd_faction_money = self.myFactionMoney();
 			sendMoney(parseInt(self.intendedAmmount()), uberId, self.myFactionId(), self.transferTargetId(), playerKey, self.turn());
 		}
 
@@ -567,7 +612,7 @@ requireGW([
 
 		// Get session information about the user, his game, environment, and so on
 		//self.uberId = ko.observable().extend({ session: 'uberId'});
-        //self.displayName = ko.observable('').extend({ session: 'displayName' });
+		//self.displayName = ko.observable('').extend({ session: 'displayName' });
 
 
 		// Tracked for knowing where we've been for pages that can be accessed in more than one way
@@ -940,7 +985,7 @@ requireGW([
 		self.neighbors = ko.observableArray([]);
 		//self.biome = star.biome;
 		self.stage = stage;
-		self.attackers=star.attackers;
+		self.attackers = star.attackers;
 
 		self.visited = ko.computed(function () {
 				return true
@@ -1033,75 +1078,72 @@ requireGW([
 		/*System owner*/
 		//If no owner show star
 		var owner = self.star.owner;
-		
-		var yOffset=10;
-		var playersHere=0;
 
-			if (owner == "-1" || !owner) {
-				var icon = createBitmap({
-						url: "img/star.png",
-						size: [90, 90]
-					});
-				icon.z = 1;
-				self.systemDisplay.addChild(icon);
-				
-			} else {
+		var yOffset = 10;
+		var playersHere = 0;
 
-				var factionIcon = 'img/icon_faction_' + owner + '.png';
-				var iconColor = factionColors[owner];
-				playersHere++;
+		if (owner == "-1" || !owner) {
+			var icon = createBitmap({
+					url: "img/star.png",
+					size: [90, 90]
+				});
+			icon.z = 1;
+			self.systemDisplay.addChild(icon);
 
-				self.icon = createBitmap({
-						url: factionIcon,
-						size: [128, 128],
-						color: iconColor,
-						scale: 0.4
-					});
-				self.icon.z = 0;
-				self.systemDisplay.addChild(self.icon);
-				yOffset=30;
-			}
+		} else {
+
+			var factionIcon = 'img/icon_faction_' + owner + '.png';
+			var iconColor = factionColors[owner];
+			playersHere++;
+
+			self.icon = createBitmap({
+					url: factionIcon,
+					size: [128, 128],
+					color: iconColor,
+					scale: 0.4
+				});
+			self.icon.z = 0;
+			self.systemDisplay.addChild(self.icon);
+			yOffset = 30;
+		}
 		//Show attacking factions
-		
-		if (self.attackers!=null)
-		{
-			var offset=15;
-			var xOffset=-1*offset;
-			for (var i=0;i<self.attackers.length;i++)
-			{
+
+		if (self.attackers != null) {
+			var offset = 15;
+			var xOffset = -1 * offset;
+			for (var i = 0; i < self.attackers.length; i++) {
 				playersHere++;
 				var factionIcon = 'img/icon_faction_' + self.attackers[i] + '.png';
 				var iconColor = factionColors[parseInt(self.attackers[i])];
 
-					var icon = createBitmap({
-							url: factionIcon,
-							size: [128, 128],
-							color: iconColor,
-							scale: 0.22
-						});
-					icon.x=icon.x+xOffset;
-					icon.y=icon.y+yOffset;
-					icon.z = 1;
-					self.systemDisplay.addChild(icon);
-					xOffset=xOffset+2*offset;
+				var icon = createBitmap({
+						url: factionIcon,
+						size: [128, 128],
+						color: iconColor,
+						scale: 0.22
+					});
+				icon.x = icon.x + xOffset;
+				icon.y = icon.y + yOffset;
+				icon.z = 1;
+				self.systemDisplay.addChild(icon);
+				xOffset = xOffset + 2 * offset;
 			}
 		}
 
 		//Show battle Icon if there is a battle
-		if (playersHere>1)
-		{
-				var battleIcon = 'img/icons_command_attack_move.png';
-				//var iconColor = factionColors[i];
-					var icon = createBitmap({
-							url: battleIcon,
-							size: [60, 60],
-							//color: iconColor,
-							scale: 0.6
-						});
-					//icon.x=icon.x;
-					icon.y=icon.y+15;
-					icon.z = 1;
-					self.systemDisplay.addChild(icon);
+		if (playersHere > 1) {
+			var battleIcon = 'img/icons_command_attack_move.png';
+			//var iconColor = factionColors[i];
+			var icon = createBitmap({
+					url: battleIcon,
+					size: [60, 60],
+					//color: iconColor,
+					scale: 0.6
+				});
+			//icon.x=icon.x;
+			icon.y = icon.y + 15;
+			icon.z = 1;
+			self.systemDisplay.addChild(icon);
 		}
 		ownerIcon.visible = false;
 		self.ownerColor = ko.observable();
@@ -1136,8 +1178,8 @@ requireGW([
 		var self = this;
 		self.data = data.players;
 		self.data = self.data.sort(function (a, b) {
-			return parseInt(b.wealth) - parseInt(a.wealth);
-		});
+				return parseInt(b.wealth) - parseInt(a.wealth);
+			});
 		self.money = 0;
 		self.aliveM = true;
 
@@ -1157,8 +1199,7 @@ requireGW([
 
 		for (var x = 0; x < self.data.length; x++) {
 			var player = self.data[x];
-			
-			
+
 			var row = $("<ul></ul>");
 			var factionIcon = $("<img></img>");
 			var rank = $("<li></li>");
@@ -1179,9 +1220,7 @@ requireGW([
 				alive.css('color', "red");
 				alive.html("&#10008");
 			}
-			
 
-			
 			rank.attr('class', 'player_line');
 			name.attr('class', 'player_line');
 			wealth.attr('class', 'player_line');
@@ -1192,16 +1231,15 @@ requireGW([
 			faction.html(player.faction);
 			wealth.html(player.wealth);
 			score.html(player.score);
-			
-			if (player.faction!="")
-			{
+
+			if (player.faction != "") {
 				factionIcon.attr('class', 'player_icon');
-				factionIcon.attr('src', "img/icon_faction_" + player.faction + ".png");
+				factionIcon.attr('src', "img/colored_faction_" + player.faction + ".png");
 				row.append(factionIcon);
-				
-			}
-			else rank.attr('class', 'player_rank');
-			
+
+			} else
+				rank.attr('class', 'player_rank');
+
 			row.append(rank);
 			row.append(name);
 			row.append(wealth);
@@ -1226,15 +1264,16 @@ requireGW([
 	function factionsLeaderboards(data, ladder_name, title) {
 		var self = this;
 		self.data = data.factions;
-		
+		factions = [];
+		//We want to store the faction sorted by index not by wealth so we store them before sorting
+		for (var x = 0; x < self.data.length; x++) {
+			var faction = self.data[x];
+			factions.push(new Faction(faction.faction_id, faction.name));
+		}
+
 		self.data = self.data.sort(function (a, b) {
-			return ((parseInt(b.Stars)*100+parseInt(b.wealth)) - (parseInt(a.Stars)*100+parseInt(a.wealth)));
-		});
-		
-		
-		/*this.data = this.data.sort(function (a, b) {
-		return parseFloat(b.Rating) - parseFloat(a.Rating);
-		});*/
+				return ((parseInt(b.stars) * 100 + parseInt(b.wealth)) - (parseInt(a.stars) * 100 + parseInt(a.wealth)));
+			});
 
 		var tables_parent = $('<div></div>');
 		tables_parent.attr('id', ladder_name);
@@ -1247,7 +1286,6 @@ requireGW([
 		var table = $("<ul></ul>");
 		//table.attr('class','faction');
 		tables_parent.append(table);
-		self.factions = [];
 		self.factionLeaders = [];
 
 		for (var x = 0; x < self.data.length; x++) {
@@ -1263,7 +1301,7 @@ requireGW([
 			var stars = $("<li></li>");
 
 			factionIcon.attr('class', 'faction_icon');
-			factionIcon.attr('src', "img/icon_faction_" + faction.faction_id + ".png");
+			factionIcon.attr('src', "img/colored_faction_" + faction.faction_id + ".png");
 			factionIcon.attr('alt', "faction icon");
 
 			rank.attr('class', 'faction_line');
@@ -1277,10 +1315,10 @@ requireGW([
 			name.html(faction.name) //(parseInt(x) + 1).toString());
 			var strLeaders = '';
 
-				for (var i = 0; i < faction.leaders.length; i++) {
-					strLeaders = strLeaders + faction.leaders[i] + "; ";
-					self.factionLeaders.push([faction.leaders[i], x, faction.name, faction.wealth, faction.faction_id]);
-				}
+			for (var i = 0; i < faction.leaders.length; i++) {
+				strLeaders = strLeaders + faction.leaders[i] + "; ";
+				self.factionLeaders.push([faction.leaders[i], x, faction.name, faction.wealth, faction.faction_id]);
+			}
 
 			strLeaders = strLeaders.slice(0, -2);
 			leaders.html(strLeaders);
@@ -1296,11 +1334,17 @@ requireGW([
 			row.append(wealth);
 			//row.append(score);
 			table.append(row);
-			self.factions.push(faction.name);
+
 		};
 		self.table = tables_parent;
 		$('body').append(self.table);
 		self.ready = true;
+	}
+
+	function Faction(id, name) {
+		self = this;
+		self.id = id;
+		self.name = name;
 	}
 
 	function StarsData(data) {
@@ -1309,7 +1353,7 @@ requireGW([
 
 		for (x in data.stars) {
 			var star = data.stars[x];
-			nStar = new CMDStar(star.x, star.y, star.z, star.owner, star.name, star.max_players, star.attackers, star.state, star.star_id,star.wealth);
+			nStar = new CMDStar(star.x, star.y, star.z, star.owner, star.name, star.max_players, star.attackers, star.state, star.star_id, star.wealth);
 			self.stars.push(nStar);
 		};
 	}
@@ -1330,33 +1374,36 @@ requireGW([
 		var self = this;
 		self.turn = data.turn;
 		self.phase = data.phase;
-		self.tick=data.tick;
+		self.tick = data.tick;
 		self.turnEnds = data.turn_ends;
 		self.phaseEnds = data.phase_ends;
 	}
 
-	function CMDGame(stars, paths, turn, alive,money,factionLeaders,logStatus) {
+	function CMDGame(stars, paths, turn, alive, money, factionLeaders, logStatus) {
 		var self = this;
 		self.stars = stars;
 		self.paths = paths;
 		self.turn = turn.turn;
 		self.phase = turn.phase;
-		self.tick=turn.tick;
+		self.tick = turn.tick;
 		self.turnEnds = turn.turnEnds;
 		self.phaseEnds = turn.phaseEnds;
-		self.alive=alive;
-		self.money=money;
-		self.factionLeaders=factionLeaders;
-		self.logInStatus=logStatus;
+		self.alive = alive;
+		self.money = money;
+		self.factionLeaders = factionLeaders;
+		self.logInStatus = logStatus;
 	}
 
-	function createUser(name, PID,oldPID) {
-		playerKey=localStorage.cmd_playerKey;
-		if(localStorage.cmd_playerKey==null)
+	function createUser(name, PID, oldPID) {
+		if (PID == null)
+			uberId = "U_" + makeKey();
+		localStorage.cmd_playerId = uberId;
+		playerKey = localStorage.cmd_playerKey;
+		if (localStorage.cmd_playerKey == null)
 			playerKey = makeKey();
 		//Sing up user with private key on remote DB
 		//TODO: This is not a good way to verify identities but we will use it for now
-		singUpUser(name, PID, playerKey,oldPID);
+		singUpUser(name, uberId, playerKey, oldPID);
 		localStorage.cmd_playerKey = playerKey;
 	}
 
@@ -1377,23 +1424,22 @@ requireGW([
 	//The variables we get from these files
 	var alive;
 	var playerMoney;
-	var factionLeaders=[];
-	
-	
+	var factionLeaders = [];
 
-	
 	// Get session information about the user, his game, environment, and so on
-	var uberIdIn = ko.observable().extend({ session: 'uberId'});
-	var uberId="U_"+uberIdIn();//("U_"+uberId());
-    var displayName = ko.observable('').extend({ session: 'displayName' });
-		
+	//var uberIdIn = ko.observable().extend({ session: 'uberId'});
+	//var uberId="U_"+uberIdIn();//("U_"+uberId());
+
+	var displayName = ko.observable('').extend({
+			session: 'displayName'
+		});
+
 	//Ver en exodus o PAstats como guardar un dato en localStorage
 	var playerName = decode(localStorage.uberName);
-
+	var uberId = localStorage.cmd_playerId;
 	var playerKey = localStorage.cmd_playerKey;
 	var playerId = -1;
 
-	
 	// We can start when both are ready
 	$.when(
 		$.get(url + "/cdm/stars", function (starsInput) {
@@ -1405,97 +1451,82 @@ requireGW([
 		$.get(url + "/cdm/currentTurn", function (turnInput) {
 			turn = new TurnData(turnInput);
 		}, 'json'),
-		
+
 		$.ajax({
 			url: ('http://pastats.com/report/getplayerid?ubername=' + playerName),
 			dataType: 'text',
-			success: function (PID) {
-				playerId = "U_" + PID;
-				/*if (String(PID)=="-1")
-				{
-					//playerKey=null;
-					//localStorage.cmd_playerKey=null;
-					//logInStatus=0;
+			success: function (PID_old) {
+				playerId = "U_" + PID_old;
+				/*if (String(PID)=="-1"){
+				//playerKey=null;
+				//localStorage.cmd_playerKey=null;
+				//logInStatus=0;
 				}*/
 			}
-		}),
-			
+		}), createUser(displayName(), uberId, playerId),
+
 		documentLoader).then(function (
 			$document) {
-				
+
 		$.when(
-				$.get(url + "/cdm/players", function (players) {
-					lb2 = new mercsLeaderboards(players, 'mercenaries-board', "Mercenaries", uberId);
-					playerMoney=lb2.money;
-					alive=lb2.aliveM;
-					//TODO when all players are registered propertly we won't need to call createUser always
-					createUser(displayName(), uberId,playerId);
-					//logInStatus=1;
-					
-				}, 'json'),
-				$.get(url + "/cdm/factions", function (factions) {
-					lb = new factionsLeaderboards(factions, 'faction-board', "Factions");
-					factionLeaders=lb.factionLeaders;
-				}, 'json')).then(function($document) {
+			$.get(url + "/cdm/players", function (players) {
+				lb2 = new mercsLeaderboards(players, 'mercenaries-board', "Mercenaries", uberId);
+				playerMoney = lb2.money;
+				alive = lb2.aliveM;
+				//TODO when all players are registered propertly we won't need to call createUser always
 
-		
-		//var data = new CMDGame(starsJs.stars, pathsJs.paths, turn);
-		var data = new CMDGame(starsJs.stars, pathsJs.paths, turn,alive,playerMoney,factionLeaders,logInStatus);
-		model = new GameViewModel(data);
-		
-		/*
-		self.sendAuth = function( ){
-		var client = self.client;
+				//logInStatus=1;
 
-		self.socket.emit( 'auth', { uberId: self.uberId, uberName: self.uberName, uberToken: self.uberToken, displayName: self.displayName, client: client } );
-		}
-		 */
+			}, 'json'),
+			$.get(url + "/cdm/factions", function (factions) {
+				lb = new factionsLeaderboards(factions, 'faction-board', "Factions");
+				factionLeaders = lb.factionLeaders;
+			}, 'json')).then(function ($document) {
 
-		//$.post(url+ "/cmd/action",postData,'json');
+			//var data = new CMDGame(starsJs.stars, pathsJs.paths, turn);
+			var data = new CMDGame(starsJs.stars, pathsJs.paths, turn, alive, playerMoney, factionLeaders, logInStatus);
+			model = new GameViewModel(data);
 
+			$("body").mousemove(function (event) {
+				var halfWidth = window.innerWidth / 2;
+				var halfHeight = window.innerHeight / 2;
+				var pos = [event.pageX - halfWidth, event.pageY - halfHeight];
+				if (!model.firstMousePosition()) {
+					// Use the first mouse movement as an origin to avoid popping.
+					model.firstMousePosition(pos)
+					return;
+				}
+				VMath._sub_v2(pos, model.firstMousePosition());
+				model.galaxy.parallax(pos);
+				// Smoothly reset the center of parallax to the origin.
+				VMath._mul_v2_s(model.firstMousePosition(), 0.9);
+			});
 
-		/*lb=new leaderboards("data",'faction-board',"nada");
-		lb2=new leaderboards("data",'mercenaries-board',"nada");*/
+			handlers = {};
 
-		$("body").mousemove(function (event) {
-			var halfWidth = window.innerWidth / 2;
-			var halfHeight = window.innerHeight / 2;
-			var pos = [event.pageX - halfWidth, event.pageY - halfHeight];
-			if (!model.firstMousePosition()) {
-				// Use the first mouse movement as an origin to avoid popping.
-				model.firstMousePosition(pos)
-				return;
-			}
-			VMath._sub_v2(pos, model.firstMousePosition());
-			model.galaxy.parallax(pos);
-			// Smoothly reset the center of parallax to the origin.
-			VMath._mul_v2_s(model.firstMousePosition(), 0.9);
+			handlers['settings.exit'] = function () {
+				model.showSettings(false);
+			};
+
+			handlers['panel.invoke'] = function (params) {
+				var fn = params[0];
+				var args = params.slice(1);
+				return model[fn] && model[fn].apply(model, args);
+			};
+
+			api.Panel.message('uberbar', 'visible', {
+				'value': true
+			});
+
+			// setup send/recv messages and signals
+			app.registerWithCoherent(model, handlers);
+
+			// Activates knockout.js
+			ko.applyBindings(model);
+
+			model.start();
 		});
-
-		handlers = {};
-
-		handlers['settings.exit'] = function () {
-			model.showSettings(false);
-		};
-
-		handlers['panel.invoke'] = function (params) {
-			var fn = params[0];
-			var args = params.slice(1);
-			return model[fn] && model[fn].apply(model, args);
-		};
-
-		api.Panel.message('uberbar', 'visible', {
-			'value': true
-		});
-
-		// setup send/recv messages and signals
-		app.registerWithCoherent(model, handlers);
-
-		// Activates knockout.js
-		ko.applyBindings(model);
-
-		model.start();
-	});});
+	});
 
 	function sendAttackOrder(player, subject, object, keyInput, turn) {
 		var obj = {
@@ -1520,13 +1551,13 @@ requireGW([
 		});
 	}
 
-	function singUpUser(name, PID, keyInput,oldId) {
+	function singUpUser(name, PID, keyInput, oldId) {
 		var obj = {
 			_id: PID,
 			name: name,
 			order: "newUser",
 			key: keyInput,
-			oldId:oldId,
+			oldId: oldId,
 			time: new Date().getTime()
 		};
 
@@ -1538,7 +1569,7 @@ requireGW([
 				'Content-Type': 'application/json'
 			},
 			'type': 'PUT',
-			'url': url + "/cdm_private/" + PID.toString(),
+			'url': url + "/cdm_private/" + PID,
 			'data': postData
 		});
 	}
@@ -1551,6 +1582,30 @@ requireGW([
 			subject: subject,
 			object: object,
 			ammount: ammount,
+			time: new Date().getTime(),
+			turn: turn
+		};
+
+		var postData = JSON.stringify(obj);
+
+		$.ajax({
+			headers: {
+				'Accept': 'application/json',
+				'Content-Type': 'application/json'
+			},
+			'type': 'POST',
+			'url': url + "/cdm_private/",
+			'data': postData
+		});
+	}
+
+	function sendWinnerDeclaration(star, winner, player, keyInput, turn) {
+		var obj = {
+			order: "winner",
+			player: player,
+			key: keyInput,
+			star: star,
+			winner: winner,
 			time: new Date().getTime(),
 			turn: turn
 		};

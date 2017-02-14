@@ -75,7 +75,7 @@
 <!-- SYSTEM DIALOG -->
 	<div id="system-info-board" data-bind= "visible: showStarDialog()">
 		<p>
-		<span data-bind="text: currentStarName()"></span>    <img height="30" class="float-right" data-bind="attr: { src: systemFactionIcon}"/>
+		<span data-bind="text: currentStarName()"></span> <img height="30" class="float-right" data-bind="attr: { src: systemFactionIcon}"/>
 		</p>
 		<p>
 		Max players per side: <span data-bind="text: currentStarMaxPlayers()"></span>
@@ -86,10 +86,20 @@
 		<p data-bind="visible: showStarCost()">
 		Invasion cost: <span data-bind="text: currentStarCost()"></span>
 		</p>
-
 		<button data-bind= "click: tryAttack, visible:canAttack(), click_sound: 'default', rollover_sound: 'default'" >Invade!</button>
 				<div class="attacking" data-bind= "visible: isAttacking()">Attacking this turn!</div>
+				
+		<div data-bind="visible: canDeclareWinner()">
+		<div>Is there a winner?</div>
+		<form data-bind="foreach: currentStarAspirants()">
+		  <input data-bind="value: id, checked: $parent.myWinner" type="radio" > <span data-bind="text: name"> </span><br>
+		</form>
+		<div>
+		<button data-bind= "visible: winnerSelected(), click: declareWinner, click_sound: 'default', rollover_sound: 'default'" >Confirm winner</button>
+		</div>
+		</div>
 	</div>
+	
 	
 	<div id="header" class="ignoremouse">
         <div class="btn_std_ix btn_back_small" data-bind="click: back">
