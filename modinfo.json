@@ -1,13 +1,13 @@
 {
     "author": "Gmase",
-    "build": "00003",
+    "build": "00004",
     "context": "client",
-    "date": "2017-02-10",
+    "date": "2017-02-14",
     "description": "MMO Galactic War",
     "display_name": "CMD- Canis Major Dwarf",
     "forum": "https://forums.uberent.com/threads/rel-canis-major-dwarf-beta.72310/",
     "identifier": "com.gmase.cmd",
-    "version": "3",
+    "version": "4",
 	"signature": " ",
     "scenes": {
         "start": [

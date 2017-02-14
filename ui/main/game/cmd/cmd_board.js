@@ -221,6 +221,19 @@ requireGW([
 		self.myWinner = ko.observable("-1");
 		self.myWinners = [];
 
+		self.isDebugger = ko.computed(function () {
+				if (cmdId = "U_MeI9Szu8BJHcWNR")
+					return true;
+				return false;
+			}, this);
+
+		self.resetLocalStorage = function () {
+			localStorage.cmd_decalred_winners = "";
+			localStorage.cmd_attacking = "";
+			localStorage.cmd_money = null;
+			localStorage.cmd_faction_money = null;
+		}
+
 		//localStorage.cmd_turn
 		//localStorage.cmd_phase
 		//localStorage.cmd_tick
@@ -246,7 +259,7 @@ requireGW([
 		//Applay changes
 		if (newPhase) {
 			localStorage.cmd_attacking = "";
-			localStorage.cmd_decalred_winners="";
+			localStorage.cmd_decalred_winners = "";
 		}
 
 		if (newTick) {
@@ -254,21 +267,23 @@ requireGW([
 			localStorage.cmd_regenerating = false;
 			self.money(parseInt(data.money));
 		} else {
-			if (localStorage.cmd_regenerating != null)
+			if (localStorage.cmd_regenerating != "null")
 				self.regenerating(localStorage.cmd_regenerating);
-			if (localStorage.cmd_money != null)
+			if (localStorage.cmd_money != "null")
 				self.money(parseInt(localStorage.cmd_money));
-			if (localStorage.cmd_faction_money != null)
+			else
+				self.money(parseInt(data.money));
+			if (localStorage.cmd_faction_money != "null")
 				self.myFactionMoney(parseInt(localStorage.cmd_faction_money));
 		}
 
 		self.myFactionIndex = ko.computed(function () {
 				for (var i = 0; i < self.factionLeaders().length; i++) {
-					if (uberId == self.factionLeaders()[i][0]) {
+					if (cmdId == self.factionLeaders()[i][0]) {
 						self.myFaction(self.factionLeaders()[i][2]);
 						self.myFactionId(self.factionLeaders()[i][4]);
 						self.isFactionLeader(true);
-						if (newTick)
+						if (newTick || self.myFactionMoney() == null)
 							self.myFactionMoney(self.factionLeaders()[i][3]);
 						return i;
 					}
@@ -281,12 +296,12 @@ requireGW([
 		localStorage.cmd_phase = data.phase;
 		localStorage.cmd_money = self.money();
 		localStorage.cmd_faction_money = self.myFactionMoney();
-		
-		if (localStorage.cmd_decalred_winners != null && localStorage.cmd_decalred_winners !="")
+
+		if (localStorage.cmd_decalred_winners != null && localStorage.cmd_decalred_winners != "")
 			self.myWinners = JSON.parse(localStorage.cmd_decalred_winners);
 
 		self.declareWinner = function () {
-			sendWinnerDeclaration(self.currentStarId(), self.myWinner(), uberId, playerKey, self.turn());
+			sendWinnerDeclaration(self.currentStarId(), self.myWinner(), cmdId, playerKey, self.turn());
 			self.myWinners.push([self.currentStarId(), self.myWinner()]);
 			localStorage.cmd_decalred_winners = JSON.stringify(self.myWinners);
 			self.myWinner("-1");
@@ -450,7 +465,7 @@ requireGW([
 				localStorage.cmd_regenerating = true;
 				self.hideRegenerateDialog();
 				//A special money transfer to regen comm
-				sendMoney(regenerateCost, uberId, uberId, "REGENERATE", playerKey, self.turn());
+				sendMoney(regenerateCost, cmdId, cmdId, "REGENERATE", playerKey, self.turn());
 			}
 		}
 
@@ -459,7 +474,7 @@ requireGW([
 			}, this);
 
 		self.canSend = ko.computed(function () {
-				return (self.hasMoney() && self.transferTargetId() != null && self.transferTargetId() != uberId);
+				return (self.hasMoney() && self.transferTargetId() != null && self.transferTargetId() != cmdId);
 			}, this);
 
 		self.canSendFaction = ko.computed(function () {
@@ -468,7 +483,7 @@ requireGW([
 
 		//Attack dialog
 		self.tryAttack = function () {
-			sendAttackOrder(uberId, self.myFactionId(), self.currentStarId(), playerKey, self.turn());
+			sendAttackOrder(cmdId, self.myFactionId(), self.currentStarId(), playerKey, self.turn());
 			//store attacking star;
 			self.attackingSystems().push(self.currentStarId());
 			localStorage.cmd_attacking = JSON.stringify(self.attackingSystems());
@@ -502,7 +517,20 @@ requireGW([
 				//has money for it
 				var valCost = self.currentStarCost() <= self.myFactionMoney();
 
-				return (valPhase && valLeader && !valAttacking && valCost && valNotOwned);
+				//is there a path if the star is occupied
+				var valPath = false;
+				if (self.currentStarCost() == occupiedStarPrice) { //TODO
+					for (var p = 0; p < data.paths.length; p++) {
+						var path = data.paths[p];
+						if ((String(path[0]) == self.currentStarId() && data.stars[path[1]].owner == self.myFactionId()) || (String(path[1]) == self.currentStarId() && data.stars[path[0]].owner == self.myFactionId())) {
+							valPath = true;
+							break;
+						}
+					}
+				} else
+					valPath = true;
+
+				return (valPhase && valLeader && !valAttacking && valCost && valNotOwned && valPath);
 			}, this);
 
 		self.canDeclareWinner = ko.computed(function () { //If player is faction leader, if phase=battle, his faction is an aspirant and havent declared winner yet
@@ -517,20 +545,19 @@ requireGW([
 							break;
 						}
 					}
-				var valAlreadyDone=false;
-				if(valLeader && valPhase && valAspirant)
-				for (var i=0;i<self.myWinners.length;i++)
-					if (self.myWinners[i][0]==self.currentStarId())
-					{
-						valAlreadyDone=true;
-						break;
-					}
+				var valAlreadyDone = false;
+				if (valLeader && valPhase && valAspirant)
+					for (var i = 0; i < self.myWinners.length; i++)
+						if (self.myWinners[i][0] == self.currentStarId()) {
+							valAlreadyDone = true;
+							break;
+						}
 				return valLeader && valPhase && valAspirant && !valAlreadyDone;
 			}, this);
-			
-		self.winnerSelected= ko.computed(function () {
-			return self.myWinner()!="-1";	
-		}, this);
+
+		self.winnerSelected = ko.computed(function () {
+				return self.myWinner() != "-1";
+			}, this);
 
 		//Money transfer dialog
 		self.showSendMoneyDialogFaction = function () {
@@ -597,13 +624,13 @@ requireGW([
 			self.sendMoneyDialog(false);
 			self.money(self.money() - parseInt(self.intendedAmmount()))
 			localStorage.cmd_money = self.money();
-			sendMoney(parseInt(self.intendedAmmount()), uberId, uberId, self.transferTargetId(), playerKey, self.turn());
+			sendMoney(parseInt(self.intendedAmmount()), cmdId, cmdId, self.transferTargetId(), playerKey, self.turn());
 		}
 		self.trySendMoneyFaction = function () {
 			self.sendMoneyDialogFaction(false);
 			self.myFactionMoney(self.myFactionMoney() - parseInt(self.intendedAmmount()))
 			localStorage.cmd_faction_money = self.myFactionMoney();
-			sendMoney(parseInt(self.intendedAmmount()), uberId, self.myFactionId(), self.transferTargetId(), playerKey, self.turn());
+			sendMoney(parseInt(self.intendedAmmount()), cmdId, self.myFactionId(), self.transferTargetId(), playerKey, self.turn());
 		}
 
 		self.useLocalServer = ko.observable().extend({
@@ -1394,16 +1421,16 @@ requireGW([
 		self.logInStatus = logStatus;
 	}
 
-	function createUser(name, PID, oldPID) {
+	function createUser(name, PID) {
 		if (PID == null)
-			uberId = "U_" + makeKey();
-		localStorage.cmd_playerId = uberId;
+			cmdId = "U_" + makeKey();
+		localStorage.cmd_playerId = cmdId;
 		playerKey = localStorage.cmd_playerKey;
 		if (localStorage.cmd_playerKey == null)
 			playerKey = makeKey();
 		//Sing up user with private key on remote DB
 		//TODO: This is not a good way to verify identities but we will use it for now
-		singUpUser(name, uberId, playerKey, oldPID);
+		singUpUser(name, cmdId, playerKey);
 		localStorage.cmd_playerKey = playerKey;
 	}
 
@@ -1427,8 +1454,12 @@ requireGW([
 	var factionLeaders = [];
 
 	// Get session information about the user, his game, environment, and so on
-	//var uberIdIn = ko.observable().extend({ session: 'uberId'});
-	//var uberId="U_"+uberIdIn();//("U_"+uberId());
+	/*
+	var uberIdIn = ko.observable().extend({
+			session: 'uberId'
+		});
+	var oldId = "U_" + uberIdIn();
+	*/
 
 	var displayName = ko.observable('').extend({
 			session: 'displayName'
@@ -1436,7 +1467,7 @@ requireGW([
 
 	//Ver en exodus o PAstats como guardar un dato en localStorage
 	var playerName = decode(localStorage.uberName);
-	var uberId = localStorage.cmd_playerId;
+	var cmdId = localStorage.cmd_playerId;
 	var playerKey = localStorage.cmd_playerKey;
 	var playerId = -1;
 
@@ -1451,31 +1482,18 @@ requireGW([
 		$.get(url + "/cdm/currentTurn", function (turnInput) {
 			turn = new TurnData(turnInput);
 		}, 'json'),
-
-		$.ajax({
-			url: ('http://pastats.com/report/getplayerid?ubername=' + playerName),
-			dataType: 'text',
-			success: function (PID_old) {
-				playerId = "U_" + PID_old;
-				/*if (String(PID)=="-1"){
-				//playerKey=null;
-				//localStorage.cmd_playerKey=null;
-				//logInStatus=0;
-				}*/
-			}
-		}), createUser(displayName(), uberId, playerId),
+		//TODO when all players are registered propertly we won't need to call createUser always
+		createUser(displayName(), cmdId),
+		//logInStatus=1;
 
 		documentLoader).then(function (
 			$document) {
 
 		$.when(
 			$.get(url + "/cdm/players", function (players) {
-				lb2 = new mercsLeaderboards(players, 'mercenaries-board', "Mercenaries", uberId);
+				lb2 = new mercsLeaderboards(players, 'mercenaries-board', "Mercenaries", cmdId);
 				playerMoney = lb2.money;
 				alive = lb2.aliveM;
-				//TODO when all players are registered propertly we won't need to call createUser always
-
-				//logInStatus=1;
 
 			}, 'json'),
 			$.get(url + "/cdm/factions", function (factions) {
@@ -1551,13 +1569,12 @@ requireGW([
 		});
 	}
 
-	function singUpUser(name, PID, keyInput, oldId) {
+	function singUpUser(name, PID, keyInput) {
 		var obj = {
 			_id: PID,
 			name: name,
 			order: "newUser",
 			key: keyInput,
-			oldId: oldId,
 			time: new Date().getTime()
 		};
 

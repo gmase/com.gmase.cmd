@@ -106,8 +106,10 @@
             <span class="glyphicon glyphicon-chevron-left carat"></span>
         </div>
 		<div id="log_in_status">
-			<span data-bind="text: logInStatus"></span>
+			<span data-bind="text: logInStatus"></span> <button data-bind= "visible: isDebugger, click: resetLocalStorage(), click_sound: 'default', rollover_sound: 'default'" >Reset</button>
 		</div>
+
+		
 	    <div id="player_info">
 		<ul class="horizontal_menu">
 			<li data-bind= "visible: isFactionLeader">
