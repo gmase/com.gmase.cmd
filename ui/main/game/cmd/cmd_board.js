@@ -222,7 +222,7 @@ requireGW([
 		self.myWinners = [];
 
 		self.isDebugger = ko.computed(function () {
-				if (cmdId = "U_MeI9Szu8BJHcWNR")
+				if (cmdId == "U_MeI9Szu8BJHcWNR")
 					return true;
 				return false;
 			}, this);
