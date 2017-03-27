@@ -745,6 +745,12 @@ requireGW([
 				self.currentStar(star);
 			});
 		});
+		
+		self.linkToDiscord = function()
+    {
+        engine.call( 'web.launchPage', 'https://discord.gg/3NPDQeh' );
+    }
+	
 	}
 
 	function GalaxyViewModel(data) {
@@ -1422,15 +1428,20 @@ requireGW([
 	}
 
 	function createUser(name, PID) {
+		var newUser=false;
 		if (PID == null)
+		{
 			cmdId = "U_" + makeKey();
+			newUser=true;
+		}
 		localStorage.cmd_playerId = cmdId;
 		playerKey = localStorage.cmd_playerKey;
 		if (localStorage.cmd_playerKey == null)
 			playerKey = makeKey();
 		//Sing up user with private key on remote DB
 		//TODO: This is not a good way to verify identities but we will use it for now
-		singUpUser(name, cmdId, playerKey);
+		if(newUser)
+			singUpUser(name, cmdId, playerKey);
 		localStorage.cmd_playerKey = playerKey;
 	}
 
@@ -1482,7 +1493,6 @@ requireGW([
 		$.get(url + "/cdm/currentTurn", function (turnInput) {
 			turn = new TurnData(turnInput);
 		}, 'json'),
-		//TODO when all players are registered propertly we won't need to call createUser always
 		createUser(displayName(), cmdId),
 		//logInStatus=1;
 
