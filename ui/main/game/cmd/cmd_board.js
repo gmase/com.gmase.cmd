@@ -1408,6 +1408,7 @@ requireGW([
 		self.turn = data.turn;
 		self.phase = data.phase;
 		self.tick = data.tick;
+		self.resetDate=data.reset_date;
 		self.turnEnds = data.turn_ends;
 		self.phaseEnds = data.phase_ends;
 	}
@@ -1427,8 +1428,19 @@ requireGW([
 		self.logInStatus = logStatus;
 	}
 
-	function createUser(name, PID) {
+	function createUser(name, pidIn,resetDate) {
 		var newUser=false;
+		var PID=pidIn;
+		//if resetDate>cmd_playerDate
+		
+		playerDate=localStorage.cmd_playerDate;
+		if (playerDate==null || playerDate<new Date(resetDate).getTime())
+		{
+			PID=null;
+			localStorage.cmd_playerKey=null;
+			localStorage.cmd_playerDate = new Date().getTime();
+		}
+		
 		if (PID == null)
 		{
 			cmdId = "U_" + makeKey();
@@ -1492,11 +1504,15 @@ requireGW([
 		}, 'json'),
 		$.get(url + "/cdm/currentTurn", function (turnInput) {
 			turn = new TurnData(turnInput);
-		}, 'json'),
-		createUser(displayName(), cmdId),
+		}, 'json'),documentLoader
+		
+		).then(function($document){
+		
+		$.when(
+		createUser(displayName(), cmdId,turn.resetDate)
 		//logInStatus=1;
 
-		documentLoader).then(function (
+		).then(function (
 			$document) {
 
 		$.when(
@@ -1554,6 +1570,7 @@ requireGW([
 
 			model.start();
 		});
+	});
 	});
 
 	function sendAttackOrder(player, subject, object, keyInput, turn) {
