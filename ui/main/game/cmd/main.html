@@ -99,10 +99,6 @@
 		</div>
 		</div>
 	</div>
-	
-		<div id="announcement" class="pop_up_menu">
-			<span >The battle will begin soon, but first you have to join the <a data-bind= "click: linkToDiscord" >community Discord</a><span> and talk to me (gmase) to join a faction</span>
-		</div>
 		
 		
 	
@@ -111,9 +107,12 @@
             <span class="glyphicon glyphicon-chevron-left carat"></span>
         </div>
 		<div id="log_in_status">
-			<span data-bind="text: logInStatus"></span> <button data-bind= "visible: isDebugger, click: resetLocalStorage(), click_sound: 'default', rollover_sound: 'default'" >Reset</button>
+			<!--<span data-bind="text: logInStatus"></span> -->
+			<span>Join the <a data-bind= "click: linkToDiscord" >community Discord</a><span> and talk to me (gmase) to join a faction</span>
+			<button data-bind= "visible: isDebugger, click: resetLocalStorage(), click_sound: 'default', rollover_sound: 'default'" >Reset</button>
 		</div>
 
+		
 
 	    <div id="player_info">
 		<ul class="horizontal_menu">
