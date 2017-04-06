@@ -1207,7 +1207,7 @@ requireGW([
 		});
 	}
 
-	function mercsLeaderboards(data, ladder_name, title, playerId) {
+	function mercsLeaderboards(data, ladder_name, title, playerId,factionLeaders) {
 		var self = this;
 		self.data = data.players;
 		self.data = self.data.sort(function (a, b) {
@@ -1227,6 +1227,7 @@ requireGW([
 		tables_parent.append(head);
 
 		var table = $("<ul></ul>");
+		table.attr('class', 'mercs_table');
 		tables_parent.append(table);
 		players = []
 
@@ -1234,7 +1235,19 @@ requireGW([
 			var player = self.data[x];
 
 			var row = $("<ul></ul>");
+			row.attr('class', 'mercs_rows');
+			//var div_row=$("<div></div>");
+			//div_row.attr('class', 'mercs_rows');
+			
+			var images= $("<div></div>");
+			images.attr('class', 'superpuestas');
+			
+			var texts= $("<div></div>");
+			texts.attr('class', 'mercs_texts');
+			
 			var factionIcon = $("<img></img>");
+			var leaderIcon = $("<img></img>");
+			
 			var rank = $("<li></li>");
 			var name = $("<li></li>");
 			var faction = $("<li></li>");
@@ -1265,18 +1278,37 @@ requireGW([
 			wealth.html(player.wealth);
 			score.html(player.score);
 
+			
 			if (player.faction != "") {
 				factionIcon.attr('class', 'player_icon');
 				factionIcon.attr('src', "img/colored_faction_" + player.faction + ".png");
-				row.append(factionIcon);
+				images.append(factionIcon);
+				
+				for (var i = 0; i < factionLeaders.length; i++) {
+					if (player.id == factionLeaders[i][0]) {
+						//Is faction leader
+						leaderIcon.attr('class', 'leader_icon');
+						leaderIcon.attr('src', "img/leader.png");
+						images.append(leaderIcon);
+						
+				}
+				}
 
-			} else
-				rank.attr('class', 'player_rank');
+			} //else
+			//	rank.attr('class', 'player_rank');
+			texts.append(rank);
+			texts.append(name);
+			texts.append(wealth);
+			texts.append(alive);
+			
+			
+			row.append(images);
+			row.append(texts);
+			//div_row.append(images);
+			//div_row.append(texts);
+			
+			//row.append(div_row);
 
-			row.append(rank);
-			row.append(name);
-			row.append(wealth);
-			row.append(alive);
 			//row.append(score);
 			//row.attr('pid',player.Id);
 			table.append(row);
@@ -1509,7 +1541,11 @@ requireGW([
 		).then(function($document){
 		
 		$.when(
-		createUser(displayName(), cmdId,turn.resetDate)
+		createUser(displayName(), cmdId,turn.resetDate),
+			$.get(url + "/cdm/factions", function (factions) {
+				lb = new factionsLeaderboards(factions, 'faction-board', "Factions");
+				factionLeaders = lb.factionLeaders;
+			}, 'json')
 		//logInStatus=1;
 
 		).then(function (
@@ -1517,14 +1553,10 @@ requireGW([
 
 		$.when(
 			$.get(url + "/cdm/players", function (players) {
-				lb2 = new mercsLeaderboards(players, 'mercenaries-board', "Mercenaries", cmdId);
+				lb2 = new mercsLeaderboards(players, 'mercenaries-board', "Mercenaries", cmdId,factionLeaders);
 				playerMoney = lb2.money;
 				alive = lb2.aliveM;
 
-			}, 'json'),
-			$.get(url + "/cdm/factions", function (factions) {
-				lb = new factionsLeaderboards(factions, 'faction-board', "Factions");
-				factionLeaders = lb.factionLeaders;
 			}, 'json')).then(function ($document) {
 
 			//var data = new CMDGame(starsJs.stars, pathsJs.paths, turn);

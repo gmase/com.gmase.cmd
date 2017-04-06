@@ -110,11 +110,7 @@ li.faction_line{
 
 }
 
-li.player_line{	
-    display: inline-block;
-	margin-bottom:5px;
-	margin-left:20px;
-}
+
 
 .player_rank{
     display: inline-block;
@@ -219,12 +215,55 @@ img.faction_icon{
 	background-size: 30px 30px;*/
 }
 
-img.player_icon{
+.mercs_rows{
+	font-size: 14px;
+}
+
+.mercs_rows{
+	position: relative;
+	float:top;
+	height: 28px;
+	margin-left:0px;
+}
+
+.mercs_texts{
+	position: absolute;
+	left:30px;
+	display: inline-block;  
+}
+
+
+li.player_line{	
+	position: relative;
+	float:left;
+    display: inline-block;
+	margin-bottom:5px;
+	margin-left:10px;
+}	
+
+.superpuestas{
+	position: relative;
+	float:left;
 	display: inline-block;  
 	height: 20px;
 	margin-left:0px;
 }
 
+
+img.player_icon{
+	display: inline-block;  
+	height: 25px;
+	margin-left:0px;
+}
+
+img.leader_icon{
+	position: absolute;
+	top: 0;
+	left: 5px;
+	height: 10px;
+	margin-bottom:5px;
+	margin-left:0px;
+}
 
 
 #system-column {
@@ -272,10 +311,11 @@ img.player_icon{
     margin: 10px;
     max-height: 80%;
     overflow-y: auto;
-}
+}	
 
 	#mercenaries-board #current_player {
-		font-size: 15px;
+		color: #88DBFF;
+		font-weight: bold;
 	}
     #mercenaries-board .div_credits_title {
         font-family: 'Sansation Bold';
