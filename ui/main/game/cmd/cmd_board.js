@@ -7,6 +7,7 @@ factionColors[0] = [0, 176 / 255, 255 / 255];
 factionColors[1] = [145 / 255, 87 / 255, 199 / 255];
 factionColors[2] = [244 / 255, 125 / 255, 31 / 255];
 factionColors[3] = [236 / 255, 34 / 255, 35 / 255];
+factionColors[4] = [232 / 255, 138 / 255, 175 / 255];
 var regenerateCost = 10;
 
 var emptyStarPrice = 10;
@@ -1462,31 +1463,42 @@ requireGW([
 
 	function createUser(name, pidIn,resetDate) {
 		var newUser=false;
+		var resetPass=false;
 		var PID=pidIn;
 		//if resetDate>cmd_playerDate
 		
+		
+		//If I reset, keep the user and discard the key
 		playerDate=localStorage.cmd_playerDate;
-		if (playerDate==null || playerDate<new Date(resetDate).getTime())
+		playerKey=localStorage.cmd_playerKey;
+		if (playerKey=="null")
+			playerKey=null;
+		if (playerDate==null || playerDate<new Date(resetDate).getTime() || !playerKey)
 		{
-			PID=null;
-			localStorage.cmd_playerKey=null;
 			localStorage.cmd_playerDate = new Date().getTime();
+			resetPass=true;
+			playerKey = makeKey();
+			localStorage.cmd_playerKey=playerKey;
+			
 		}
 		
-		if (PID == null)
+		if (!PID)
 		{
 			cmdId = "U_" + makeKey();
 			newUser=true;
+			playerKey = makeKey();
+			localStorage.cmd_playerKey=playerKey;
 		}
 		localStorage.cmd_playerId = cmdId;
-		playerKey = localStorage.cmd_playerKey;
-		if (localStorage.cmd_playerKey == null)
-			playerKey = makeKey();
-		//Sing up user with private key on remote DB
-		//TODO: This is not a good way to verify identities but we will use it for now
+		
 		if(newUser)
+		{
 			singUpUser(name, cmdId, playerKey);
-		localStorage.cmd_playerKey = playerKey;
+		}
+		else if (resetPass)
+		{
+			userResetPass(name, cmdId, playerKey);
+		}
 	}
 
 	function makeKey() {
@@ -1649,6 +1661,29 @@ requireGW([
 			'data': postData
 		});
 	}
+	
+	function userResetPass(name, PID, keyInput) {
+		var obj = {
+			_id: PID,
+			name: name,
+			order: "resetPass",
+			key: keyInput,
+			time: new Date().getTime()
+		};
+
+		var postData = JSON.stringify(obj);
+
+		$.ajax({
+			headers: {
+				'Accept': 'application/json',
+				'Content-Type': 'application/json'
+			},
+			'type': 'PUT',
+			'url': url + "/cdm_private/R_" + PID,
+			'data': postData
+		});
+	}
+	userResetPass
 
 	function sendMoney(ammount, player, subject, object, keyInput, turn) {
 		var obj = {
