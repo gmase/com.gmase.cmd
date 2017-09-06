@@ -1,13 +1,13 @@
 {
     "author": "Gmase",
-    "build": "00010",
+    "build": "00001",
     "context": "client",
-    "date": "2017-04-17",
-    "description": "MMO Galactic War Canis Major Dwarf",
-    "display_name": "Multiplayer Galactic War CMD",
+    "date": "2017-09-06",
+    "description": "MMO Persistent Galactic War",
+    "display_name": "Galactic War Online",
     "forum": "https://forums.uberent.com/threads/rel-canis-major-dwarf-beta.72310/",
-    "identifier": "com.gmase.cmd",
-    "version": "10",
+    "identifier": "com.gmase.gwo",
+    "version": "1",
 	"signature": " ",
     "scenes": {
         "start": [
@@ -21,13 +21,13 @@
         "cmd",
         "metagame"
     ],
-    "sort": "cmd",
+    "sort": "gwo",
     "authors": [
         "gmase"
     ],
     "icon": "http://i.imgur.com/Cx9Xsac.png",
     "priority": 50,
-    "dependencies": ["info.nanodesu.pastats"],
+    "dependencies": ["info.nanodesu.pastats","com.pa.legion-expansion-client"],
     "companions": [],
     "framework": false,
     "available": true,

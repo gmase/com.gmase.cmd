@@ -28,6 +28,9 @@ statusMessage[2] = "Online";
 
 var url = "https://mingersinatiormingiedste:9f10cc3e4e71559e26a642d996c0238f80852b36@gmase.cloudant.com";
 
+//var url = "https://ngetedntommeddlypentarig:4b495c74b13a03ba082d8712819490f230448011@gmase.cloudant.com";
+
+
 var turn;
 
 var phases = [];
@@ -1462,42 +1465,70 @@ requireGW([
 	}
 
 	function createUser(name, pidIn,resetDate) {
+		
+		/*Test save settings
+		api.settings.set('ui','registered','YES',true);
+		var themesetting = api.settings.isSet('ui','registered',true) || 'NO';
+		*/
+		
 		var newUser=false;
 		var resetPass=false;
 		var PID=pidIn;
-		//if resetDate>cmd_playerDate
 		
-		
-		//If I reset, keep the user and discard the key
-		playerDate=localStorage.cmd_playerDate;
-		playerKey=localStorage.cmd_playerKey;
-		if (playerKey=="null")
-			playerKey=null;
-		if (playerDate==null || playerDate<new Date(resetDate).getTime() || !playerKey)
+		var password=api.settings.isSet('gwo','pass',true) || 'MISSING';
+		console.log("Pass: "+password);
+
+		if (new Date().getTime()<new Date(resetDate).getTime() || password=='MISSING')
 		{
-			localStorage.cmd_playerDate = new Date().getTime();
 			resetPass=true;
-			playerKey = makeKey();
-			localStorage.cmd_playerKey=playerKey;
-			
 		}
 		
-		if (!PID)
+		if (resetPass) //(!PID)
 		{
-			cmdId = "U_" + makeKey();
-			newUser=true;
+			console.log("Setting registered for first time");
 			playerKey = makeKey();
-			localStorage.cmd_playerKey=playerKey;
+			newUser=true;
+			_.extend(api.settings.definitions, {
+			gwo: {
+				settings: {
+				//	registered: {
+				//	title: 'registered',
+				//	type: 'value',
+				//	default: 'NO'
+				//},
+					pass: {
+					title: 'pass',
+					type: 'value',
+					default: 'NO'
+				},
+				
+				},
+				title: "gwo"
+
+			}
+			});
+			//api.settings.set('gwo', 'registered', 'YES');
+			api.settings.set('gwo', 'pass', playerKey);
+			api.settings.save();
 		}
-		localStorage.cmd_playerId = cmdId;
+			else{
+				playerKey=api.settings.isSet('gwo','pass',true);
+			}
+	
+		cmdId="U_"+ko.observable().extend({ session: 'uberId' })();
+			
+		//cmdId=decode(localStorage.uberId);
+			
+		//localStorage.cmd_playerKey=playerKey;
+		console.log("UserId: "+cmdId);
+		console.log("Pass: "+playerKey);
+		//localStorage.cmd_playerId = cmdId;
+		
+		
 		
 		if(newUser)
 		{
 			singUpUser(name, cmdId, playerKey);
-		}
-		else if (resetPass)
-		{
-			userResetPass(name, cmdId, playerKey);
 		}
 	}
 
@@ -1635,7 +1666,7 @@ requireGW([
 				'Content-Type': 'application/json'
 			},
 			'type': 'POST',
-			'url': url + "/cdm_private/",
+			'url': url + "/gwo_private/",
 			'data': postData
 		});
 	}
@@ -1657,7 +1688,7 @@ requireGW([
 				'Content-Type': 'application/json'
 			},
 			'type': 'PUT',
-			'url': url + "/cdm_private/" + PID,
+			'url': url + "/gwo_private/" + PID,
 			'data': postData
 		});
 	}
@@ -1705,7 +1736,7 @@ requireGW([
 				'Content-Type': 'application/json'
 			},
 			'type': 'POST',
-			'url': url + "/cdm_private/",
+			'url': url + "/gwo_private/",
 			'data': postData
 		});
 	}
@@ -1729,7 +1760,7 @@ requireGW([
 				'Content-Type': 'application/json'
 			},
 			'type': 'POST',
-			'url': url + "/cdm_private/",
+			'url': url + "/gwo_private/",
 			'data': postData
 		});
 	}
